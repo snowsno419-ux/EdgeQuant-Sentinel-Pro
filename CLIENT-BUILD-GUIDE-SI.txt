@@ -1,0 +1,54 @@
+EDGEQUANT SENTINEL — CLIENT SETUP BUILD GUIDE (SINHALA)
+======================================================
+
+අරමුණ
+-----
+මෙම build kit එකෙන් Windows 10/11 64-bit සඳහා EdgeQuant-Sentinel-Client-Setup.exe
+සකස් කරයි. Client කෙනාගේ PC එකේ Python install කර තිබීම අවශ්‍ය නැත.
+Installer එක තුළ app එකට අවශ්‍ය Python runtime සහ libraries bundle කරයි.
+
+වැදගත් වෙනස
+-----------
+- Developer/build laptop එකට පමණක් 64-bit Python + Tcl/Tk සහ Inno Setup 6 අවශ්‍යයි.
+- Client PC එකට Python, pip හෝ Inno Setup අවශ්‍ය නැහැ.
+- MT5 භාවිතා කරන client කෙනාට MetaTrader 5 Windows terminal එක වෙනම install කර login විය යුතුයි.
+- මෙය Windows installer එකක්. Android/iPhone app එකක් නොවේ.
+
+BUILD කරන පියවර
+---------------
+1. ZIP එක සම්පූර්ණයෙන්ම Extract කරන්න. ZIP එක ඇතුළේ සිට BAT එක run කරන්න එපා.
+2. Extract කළ folder එක local drive එකක writable folder එකකට දාන්න.
+   උදා: C:\\EdgeQuantBuild\\
+3. Build laptop එකේ 64-bit Python (Tcl/Tk enabled) සහ Inno Setup 6 install කර තිබිය යුතුයි.
+4. Internet connection එක ON කරන්න.
+5. BUILD-CLIENT-INSTALLER.bat මත double-click කරන්න.
+6. Script එක tests, PyInstaller build, source/data scrub, MT5 import check,
+   Excel export check සහ Inno Setup compilation එක ස්වයංක්‍රීයව කරයි.
+7. සාර්ථක නම් file එක මෙතැන ලැබේ:
+   dist\\EdgeQuant-Sentinel-Client-Setup.exe
+
+CLIENT ට දෙන්න ඕනේ
+------------------
+EdgeQuant-Sentinel-Client-Setup.exe පමණයි.
+Source ZIP එක, dist folder එක, credentials, Telegram session files,
+MT5 account details හෝ developer settings කිසිවිටෙක client ට යවන්න එපා.
+
+අසාර්ථක වුණොත්
+---------------
+- Error message එක සම්පූර්ණයෙන් copy කර තබාගන්න.
+- dist folder එකෙන් කිසිම file එකක් client ට යවන්න එපා.
+- Live MT5 order එකක් දාලා test කරන්න එපා. මුලින් demo/TEST mode පමණක් භාවිතා කරන්න.
+- Clean Windows 10/11 x64 PC එකක Python නැතිව install/uninstall, first run,
+  settings save/reload, Telegram login සහ MT5 demo connection පරීක්ෂා කරන්න.
+
+SOURCE PROTECTION පිළිබඳව
+-------------------------
+Build එක client payload එකෙන් .py/.pyw source files ඉවත් කරයි.
+PyInstaller packaging එක සාමාන්‍ය source files සඟවන නමුත් cryptographic protection
+නොවේ. Reverse engineering අවදානම සම්පූර්ණයෙන්ම ඉවත් කරන බවට සහතිකයක් නැත.
+
+STATUS
+------
+මෙම Linux workspace එකෙන් Windows Setup.exe compile කර run කළ නොහැක.
+Windows laptop එකේ BUILD-CLIENT-INSTALLER.bat සාර්ථකව run කර clean-PC test
+කරන තුරු installer එක client distribution සඳහා approved නොවේ.

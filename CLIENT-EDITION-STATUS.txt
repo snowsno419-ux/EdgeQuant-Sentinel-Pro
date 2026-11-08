@@ -1,0 +1,59 @@
+EDGEQUANT SENTINEL — CLIENT EDITION BUILD STATUS
+================================================
+Source baseline: v1.9.12 / desktop UI-V5.1.13
+Package type: Windows x64 client installer build kit (not the final Setup.exe)
+
+WHAT IS PREPARED
+----------------
+- Existing app is retained; no Electron/Tauri migration is included.
+- PyInstaller onedir build embeds the Python runtime and app dependencies.
+- Inno Setup 6 creates a per-user Windows installer.
+- Client wrapper runs offline tests before build.
+- Client wrapper suppresses the developer app launch during the installer build.
+- Temporary dist payload is scrubbed of project .py/.pyw files and local settings,
+  logs, sessions and account data before the installer is compiled.
+- Scrubbed payload is checked with MT5 native-module import-only test and Excel
+  export self-check. These do not initialize MT5, log into Telegram or place orders.
+- The installer excludes .py/.pyw as an additional packaging safeguard.
+
+LOCAL VALIDATION IN THIS WORKSPACE
+----------------------------------
+- Python compilation: passed
+- Engine self-test: 555 passed, 0 failed
+- Desktop self-check: 322 passed, 0 failed
+- Pytest: 55 passed, 11 subtests passed
+
+WHAT IS NOT YET DONE
+--------------------
+- Windows PyInstaller build has not been executed in this Linux environment.
+- Inno Setup compilation has not been executed here.
+- A real Setup.exe has NOT been generated or verified.
+- Clean Windows 10/11 x64 installation without system Python has NOT been tested.
+- Client Telegram login and MT5 demo connection have NOT been tested.
+
+BUILD MACHINE REQUIREMENTS
+--------------------------
+- Windows 10/11 x64
+- 64-bit Python with Tcl/Tk enabled (developer/build machine only)
+- Internet connection to install PyInstaller and Python dependencies
+- Inno Setup 6 (developer/build machine only)
+- Microsoft Visual C++ x64 runtime may be needed for MetaTrader5 native module
+
+CLIENT MACHINE
+--------------
+- Does not need Python or pip.
+- Needs MT5 desktop terminal separately if using MT5 features.
+- Client supplies their own Telegram API credentials and authorizes their own session.
+
+DISTRIBUTION RULE
+-----------------
+Do not distribute the source ZIP, dist folder, or partial build. Only distribute
+`dist\\EdgeQuant-Sentinel-Client-Setup.exe` after the build script succeeds and a
+clean Windows PC test passes.
+
+SOURCE PROTECTION
+-----------------
+The installer payload excludes plain project .py/.pyw files. PyInstaller bytecode
+and native dependencies can still be reverse engineered; this is not cryptographic
+protection. Never embed Telegram credentials, MT5 passwords, API secrets or private
+business logic keys in the client build.

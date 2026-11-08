@@ -1,0 +1,6 @@
+Release regression tests on Linux: exit 0
+----------------------------------------------------------------------
+Ran 206 tests in 0.796s
+
+OK
+

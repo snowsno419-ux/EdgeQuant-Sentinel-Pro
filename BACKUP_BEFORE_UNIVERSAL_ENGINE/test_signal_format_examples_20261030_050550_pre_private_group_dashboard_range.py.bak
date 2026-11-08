@@ -1,0 +1,159 @@
+"""Offline text/caption parser regressions transcribed from user-supplied examples."""
+import asyncio
+import json
+import tempfile
+import unittest
+from unittest.mock import patch
+from pathlib import Path
+
+import edgequant_auto as engine
+
+
+EXAMPLES = [
+    ("GOLD BUY 4062\nSL 4058\nTP 4074\n(or You can BE on 50 Pips)",
+     "BUY", [4062.0], 4058.0, [4074.0]),
+    ("GOLD SELL 4063-4065\nSL 4067\nTP 4038\n(or You can BE on 50 Pips)",
+     "SELL", [4063.0, 4065.0], 4067.0, [4038.0]),
+    ("GOLD BUY 4030\nEntry 4030-4025\nTP 4035\nTP 4045\nTP 4055\nTP 4060\nTP 4070\nSL 4020",
+     "BUY", [4030.0, 4025.0], 4020.0,
+     [4035.0, 4045.0, 4055.0, 4060.0, 4070.0]),
+    ("GOLD sell now\nZone: 4193.00 - 4200.00\nTP1: 4188.00\nTP2: 4183.00\nTP3: 4178.00\nTP4: 4173.00\nSL: 4201.00\nIf trade moved 30 pips, set BE instantly (SL move to entry point).",
+     "SELL", [4193.0, 4200.0], 4201.0,
+     [4188.0, 4183.0, 4178.0, 4173.0]),
+    ("TEST MARKET CHANNEL\nSELL\nGOLD\nENTER IN = 4134-4141\nSL = 4142 (80 pips)\nTP1 = 4129\nTP2 = 4110\nTP3 = 4090\nTP4 = 4070",
+     "SELL", [4134.0, 4141.0], 4142.0,
+     [4129.0, 4110.0, 4090.0, 4070.0]),
+    ("Buy Gold 4035 - 4033\nStopLoss: 4027\nTP1: 4045\nTP2: 4071\nLong-term Profit: 4100",
+     "BUY", [4035.0, 4033.0], 4027.0,
+     [4045.0, 4071.0, 4100.0]),
+    ("XAUUSD BUY NOW\n@ 4141 - 4136\nSL 4131\nTP 4151",
+     "BUY", [4141.0, 4136.0], 4131.0, [4151.0]),
+]
+
+
+class SignalFormatExampleTests(unittest.TestCase):
+    def test_all_complete_screenshot_text_examples_parse_protected_levels(self):
+        for raw, direction, entries, sl, tps in EXAMPLES:
+            with self.subTest(raw=raw[:48]):
+                sig = engine.parse_signal(raw)
+                self.assertEqual(sig.action, "place")
+                self.assertEqual(sig.direction, direction)
+                self.assertEqual(sig.symbol, "XAUUSD")
+                self.assertEqual(sig.entries, entries)
+                self.assertEqual(sig.sl, sl)
+                self.assertEqual(sig.tps, tps)
+                self.assertFalse(engine.incomplete_signal_review_reason(sig, raw))
+
+    def test_bare_gold_buy_without_sl_and_tp_is_review_only(self):
+        raw = "TEST SIGNAL CHANNEL©\nGold buy 4030"
+        sig = engine.parse_signal(raw)
+        self.assertEqual(sig.action, "place")
+        self.assertIsNotNone(engine.incomplete_signal_review_reason(sig, raw))
+        self.assertEqual(engine.signal_message_is_new(-10042, 88001, recent=[]), True)
+
+    def test_tp3_is_selected_for_layer_two_when_three_or_more_targets_exist(self):
+        tps = [4035, 4045, 4055, 4060, 4070]
+        index = min(int(engine.LAYER2_TP_MAX_INDEX), len(tps) - 1)
+        self.assertEqual(tps[index], 4055)
+
+    def test_two_price_range_creates_four_orders_and_keeps_both_signal_sls(self):
+        sig = engine.parse_signal(
+            "XAUUSD SELL 4193-4200\nSL 4210\nTP1 4188\nTP2 4183\nTP3 4178")
+        plan = engine.build_plan(sig, "LIMIT", engine.Broker(), 4205.0, 4204.8)
+        self.assertEqual(len(plan), 4)
+        self.assertEqual([o["price"] for o in plan], [4194.0, 4194.0, 4201.0, 4201.0])
+        self.assertEqual([o["tp"] for o in plan], [4189.1, 4179.0, 4196.1, 4179.0])
+        self.assertEqual({o["sl"] for o in plan}, {4210.0})
+
+    def test_gold_ten_pip_offsets_match_latest_owner_examples_and_keep_signal_sl(self):
+        pip = engine.pip_size_of("XAUUSD")
+        buy_entry, _ = engine.shift_earlier(4039, 4000, 10, pip, 2,
+                                             direction="BUY")
+        sell_entry, _ = engine.shift_earlier(4042, 4100, 10, pip, 2,
+                                              direction="SELL")
+        buy_tp, _ = engine.shift_target_toward_entry(4220, "BUY", buy_entry,
+                                                      10, pip, 2)
+        sell_tp, _ = engine.shift_target_toward_entry(4020, "SELL", sell_entry,
+                                                       10, pip, 2)
+        self.assertEqual((buy_entry, buy_tp), (4038.0, 4219.0))
+        self.assertEqual((sell_entry, sell_tp), (4043.0, 4021.0))
+        sig = engine.parse_signal("XAUUSD BUY 4110\nSL 4058\nTP1 4200\nTP2 4210\nTP3 4220")
+        plan = engine.build_plan(sig, "LIMIT", engine.Broker(), 4100.0, 4099.8)
+        self.assertEqual([o["price"] for o in plan], [4109.0, 4109.0])
+        self.assertEqual({o["sl"] for o in plan}, {4058.0})
+        self.assertEqual(plan[1]["tp"], 4219.0)
+
+    def test_corrected_edit_is_allowed_only_after_review_only_no_intent(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            journal_path = Path(temp_dir) / "journal.jsonl"
+            audit_path = Path(temp_dir) / "audit.jsonl"
+            journal_path.write_text(json.dumps({
+                "chat_id": -10077, "msg_id": 445, "action": "needs_review"}) + "\n",
+                encoding="utf-8")
+            audit_path.write_text(json.dumps({
+                "chat_id": -10077, "message_id": 445, "outcome": "needs_review"}) + "\n",
+                encoding="utf-8")
+            self.assertTrue(engine.signal_message_review_edit_allowed(
+                -10077, 445, journal_path=journal_path, audit_path=audit_path))
+            with journal_path.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps({"chat_id": -10077, "msg_id": 445,
+                                     "action": "place"}) + "\n")
+            self.assertFalse(engine.signal_message_review_edit_allowed(
+                -10077, 445, journal_path=journal_path, audit_path=audit_path))
+            audit_path.write_text(json.dumps({
+                "chat_id": -10077, "message_id": 445,
+                "outcome": "submission_uncertain"}) + "\n", encoding="utf-8")
+            self.assertFalse(engine.signal_message_review_edit_allowed(
+                -10077, 445, journal_path=journal_path, audit_path=audit_path))
+
+    def test_review_only_id_reservation_can_be_released_for_a_corrected_update(self):
+        recent = []
+        self.assertTrue(engine.signal_message_is_new(-10077, 446, recent=recent, now=1000))
+        engine.signal_message_forget(-10077, 446, recent=recent)
+        self.assertTrue(engine.signal_message_is_new(-10077, 446, recent=recent, now=1001))
+
+    def test_opposite_direction_hedge_block_is_disabled_even_if_old_setting_is_true(self):
+        with patch.object(engine, "NO_OPPOSITE_TRADES", True), \
+             patch.object(engine, "HAVE_MT5", True), \
+             patch.object(engine, "my_positions", side_effect=AssertionError("must not query")):
+            self.assertEqual(engine.opposite_guard("XAUUSD", "SELL"), (True, ""))
+
+    def test_valid_sell_format_is_not_skipped_after_sixty_six_pip_market_move(self):
+        sig = engine.parse_signal("GOLD SELL 4033\\nSL 4039\\nTP 4014")
+        self.assertEqual(sig.action, "place")
+        self.assertEqual(sig.direction, "SELL")
+        self.assertEqual(engine.stale_signal(sig, 4026.53, 4026.50,
+                                             source="TEST LIMIT CHANNEL"), (False, ""))
+
+    def test_private_basic_group_uses_selected_account_without_send_as_fallback(self):
+        class Chat:
+            id = 123
+            title = "Private Group"
+        class FakeClient:
+            async def __call__(self, request):
+                raise AssertionError("basic groups must not call channels.getSendAs")
+        calls = []
+        async def sender(peer, *args, **kwargs):
+            calls.append((peer, args, kwargs))
+            return "sent"
+        chat, client = Chat(), FakeClient()
+        self.assertTrue(engine._telegram_studio_is_basic_group(chat))
+        self.assertIsNone(asyncio.run(engine._telegram_studio_require_target_send_as(client, chat)))
+        self.assertEqual(asyncio.run(engine._telegram_studio_dispatch_as(
+            client, chat, sender, "message")), "sent")
+        self.assertEqual(calls, [(chat, ("message",), {})])
+
+    def test_configured_channel_chat_suffix_uses_authoritative_price_run_exception_exactly(self):
+        with patch.object(engine, "channel_cfg_of", return_value={"late_pips": 40.0}):
+            self.assertEqual(engine.channel_signal_late_pips("TEST LIMIT CHANNEL"), 0.0)
+            self.assertEqual(engine.channel_signal_late_pips("TEST LIMIT CHANNEL Chat"), 0.0)
+            self.assertEqual(engine.channel_signal_late_pips("TEST LIMIT CHANNEL Chat Extra"), 40.0)
+
+    def test_default_first_target_is_49_90_pips_and_be_is_user_opt_in_at_fifty(self):
+        self.assertEqual(engine.LAYER1_TP_PIPS, 49.90)
+        self.assertIs(engine.AUTO_BE_ENABLED, False)
+        self.assertEqual(engine.AUTO_BE_PIPS, 50)
+
+
+if __name__ == "__main__":
+    unittest.main()
