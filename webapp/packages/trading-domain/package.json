@@ -1,0 +1,1 @@
+{"name":"@edgequant/webapp-trading-domain","private":true,"version":"0.1.0","type":"module","exports":{".":"./index.mjs"},"scripts":{"test":"node --test *.test.mjs"}}
