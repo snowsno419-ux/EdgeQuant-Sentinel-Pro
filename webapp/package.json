@@ -1,0 +1,6 @@
+{
+  "name": "edgequant-webapp", "private": true, "version": "0.1.0-phase1",
+  "workspaces": ["apps/web", "apps/api", "packages/trading-domain"],
+  "scripts": {"dev:web":"npm run dev -w @edgequant/webapp-web","dev:api":"npm run dev -w @edgequant/webapp-api","test:domain":"node --test packages/trading-domain/*.test.mjs"},
+  "engines":{"node":">=20.19.0"}
+}
