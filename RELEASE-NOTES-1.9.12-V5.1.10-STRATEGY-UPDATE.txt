@@ -1,0 +1,16 @@
+EdgeQuant Sentinel v1.9.12 — UI V5.1.10
+2026-10-29
+
+Owner-confirmed entry offset and opposite-position behavior update
+
+- Entry offsets now apply across all channels: BUY entries move 10 pips down from the signal entry; SELL entries move 10 pips up. Examples: BUY 4039 -> 4038; SELL 4042 -> 4043, for gold at 0.1 per pip.
+- The original signal SL remains exactly as posted. If the reversed offset makes the SL invalid for the order direction, the existing fail-closed SL validation still rejects that order.
+- Removed the opposite-direction hedge blocker. Existing BUY positions alone no longer prevent a valid SELL signal and vice versa.
+- Other safety checks remain: valid parse/SL/TP, freshness, TP-hit, channel enabled, account and broker selection, session/market, news, spread, per-symbol limits, LIVE confirmation, daily monetary loss and other risk controls. This change does not force malformed, stale, invalid or risk-blocked messages to trade.
+- Layer 1 remains +49 pips; Layer 2 retains the existing selected signal TP moved 10 pips toward the adjusted entry. Two layers per entry remain.
+- Exact-entry Telegram follow-up management from V5.1.9 remains intact; owner AUTO BE ON/OFF and trigger remain authoritative.
+
+Validation still required
+- Run offline engine/UI/unit tests and source checks.
+- No Telegram send or MT5 order was used during development.
+- The packaged Windows MT5 native import-only check and clean Windows 10/11 x64 non-live installation test must pass before any client distribution. No Windows Setup.exe is claimed.

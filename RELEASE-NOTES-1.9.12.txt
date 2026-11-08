@@ -1,0 +1,228 @@
+EDGEQUANT SENTINEL v1.9.12 — UI V5.1.6 MANDATORY TELEGRAM AUTO-RECONNECT (2026-10-28)
+
+- Telegram auto-reconnect is mandatory. A saved session automatically retries transient startup/network failures with a capped backoff; the running listener also retries after transport disconnects. The desktop status reports reconnecting while retrying.
+- After reconnection, selected-channel history recovery resumes through normal exact Telegram message-ID idempotency, freshness, source, TP-hit, account, broker, LIVE and risk gates. Uncertain MT5 submissions are not auto-replayed; the existing weekend LIMIT-only queue rules remain unchanged.
+- A revoked/unregistered Telegram authorization, missing login, or invalid API credentials is not a network outage and requires the client to complete Telegram LOGIN. Automatic retry never bypasses authentication.
+- Four offline fake-client regression tests cover retry-to-success, no-session behavior, permanent authorization errors, and transient-error classification. No live Telegram request, MT5 order or Windows build was attempted.
+
+EDGEQUANT SENTINEL v1.9.12 — UI V5.1.5 PROVIDER JOURNAL + MANUAL MT5 LINKING (2026-10-25)
+
+- Signal message first line now uses the selected destination name instead of the EdgeQuant brand: `📊 {destination name} • TRADE SIGNAL`.
+- Added a separate Provider-only signal/trade journal and per-group/channel signal table. It records published signals, Entry, SL, TP levels and manual progress events; linked MT5 results are shown only when explicitly recorded. Receiver trades remain separate.
+- Added an explicit selector to link a chosen MT5 `magic=0` manual ticket to a selected Provider signal. No fuzzy matching, EA ticket linking or ticket modification. Manual Provider ticket links are included in that signal's Provider PDF/Excel exports.
+- Added a Provider-only Layer 1 quick-TP pips setting; Layer 2 keeps the signal TP. This does not mutate Receiver/global Layer 1 configuration.
+- `PUBLISH ONLY` posts and journals without MT5 processing. Only `PUBLISH + PROCESS` can process once through existing TEST/LIVE, account, broker, freshness and risk gates. No live send, MT5 order, credential read or Windows build was run.
+
+EDGEQUANT SENTINEL v1.9.12 — UI V5.1.4 SIGNAL HEADER + POLL + JOURNAL REPAIR (2026-10-25)
+
+- Signal Composer adds the destination's own group/channel name to the first `EDGEQUANT SENTINEL • TRADE SIGNAL` line separately for each recipient. Telegram's sender remains the actual destination identity through Send As; status/edit updates retain the destination-specific header.
+- Fixed the reported Poll constructor failure. Telethon versions whose generated `Poll` type requires the current `hash` field receive `hash=0`; older supported types without the field continue to work. Offline fake-constructor regressions cover both schemas.
+- Provider PDF now includes a linked MT5 Trade Journal page keyed to the Provider Signal ID. Excel's `LINKED MT5 TRADES` sheet includes the signal ID and symbol/direction. Destination-specific exports include only trades linked to signals in the selected group/channel. Missing journal linkage is stated clearly; no trades or P&L are fabricated.
+- Retains V5.1.3 group/channel PDF+Excel manual exports and the fresh opt-in 23:58 local daily PDF+Excel delivery. No Telegram sends, MT5 orders, credentials access, or settings changes occurred during this repair.
+
+EDGEQUANT SENTINEL v1.9.12 — UI V5.1.3 PROVIDER PER-DESTINATION REPORTS + 23:58 EOD PDF/EXCEL (2026-10-25)
+
+- Added Signal Provider manual per-destination Trade Journal exports: choose a Telegram destination marked OWNED, then export filtered Excel or PDF. The selected group/channel name is the report title/brand, the user-uploaded Provider logo is embedded, and EdgeQuant Sentinel remains the bottom-left software footer. Existing global Provider exports still use the entered Provider brand name. Receiver report branding is unchanged.
+- Extended the Provider EOD schedule to generate one full professional PDF and one Excel workbook for each destination that received at least one successful Provider signal during that local day. Both daily files include only that destination's successfully sent signals, linked MT5 results where available, the user-uploaded logo and EdgeQuant Sentinel footer; the workbook is a daily-only filtered view. Destinations are derived from sent publication records; no signal means no report.
+- New schedule default: **23:58 local time**; it remains opt-in and requires a fresh confirmation, so an earlier text-only schedule will not silently expand into document sends. PDF is sent first and Excel second; partial/failed/uncertain bundles remain review-only with exact per-file message IDs; date/destination idempotency is preserved and no automatic retry occurs. The app and Telegram connection must remain active. No scheduled report was sent during development.
+- Offline regressions: per-destination PDF/XLSX filtering, logo embed, title/footer, daily successful-destination derivation, and no-data/unsent destination exclusion. Receiver workspace remains unaffected.
+
+EDGEQUANT SENTINEL v1.9.12 — UI V5.1.2 TELEGRAM SEND-AS PERMISSION FIX (2026-10-25)
+
+- Fixed the reported `SendAsPeerInvalidError` path for Signal Composer sends: before uploading the user's logo or sending a message/poll/file, the app queries Telegram's allowed Send As identities for that exact destination and proceeds only if the destination itself is allowed.
+- Unauthorized destinations are stopped before send with instructions to check Telegram's Send As identity picker and grant the required owner/admin/anonymous-posting rights. If Telegram still returns `SendAsPeerInvalidError` on the media request, EdgeQuant shows a destination-specific explanation. It never falls back to the user's personal account.
+- Fake-client regressions cover allowed identity, denied identity (no dispatch), and translation of the exact media-send RPC error. Engine self-test: **552 passed, 0 failed** before this final label/doc update. Telethon dependency: `>=1.41,<2`. No live Telegram test or actual group permission was exercised.
+- Provider report brand/title/logo/footer and MT5 `_core` build-preflight improvements from the previous source update remain included. Separate user-owned Provider/Receiver control bots are not implemented in this ZIP; no Windows EXE was built.
+
+EDGEQUANT SENTINEL v1.9.12 — UI V5.1.1 REPORT BRANDING + MT5 _CORE BUILD PREFLIGHT (2026-10-25)
+
+- Provider PDF cover and page-header branding now use the Provider Brand Name field; Provider Excel report title and workbook metadata use the same name. Provider/Plan Excel sheets display “EdgeQuant Sentinel” in the print footer, and PDF exports retain “EdgeQuant Sentinel” at the bottom-left. Both Provider formats embed the selected logo.
+- The Windows build now rejects 32-bit Python, verifies the `MetaTrader5` and `MetaTrader5._core` imports before packaging, explicitly collects the MT5 native binaries, then runs a frozen-app import-only smoke test. This test does not initialize a terminal or submit orders. Native DLL troubleshooting directs the user to the Microsoft Visual C++ x64 runtime and matching 64-bit Python.
+- Regression validation: branded Provider Excel/PDF title, logo media and footer test passed; Provider Studio tests **6/6** and combined Sinhala/Provider tests **11/11**. Desktop self-check **313/313**, engine self-test **548/548**, `edgequant_check.py` exit 0, and Python compilation passed. `edgequant_check.py` reports MetaTrader5 absent in this Linux sandbox as expected. No Windows build/frozen import, live Telegram send, MT5 initialization/order, or credentials access was performed.
+- The user confirmed that Telegram Studio must post as the destination group/channel identity, not add a destination label. Signal, plain-text, file, poll, manual-mirror, and scheduled-report sends now pass the exact destination as Telethon `send_as`. Telegram enforces Send As/admin rights; on denial the send fails with the destination-specific error, with no fallback to the signed-in account. Fake-client tests verify the target identity argument for each supported send mode. Telethon requirement is `>=1.41,<2` (send-as support for both message and file sends). No live send or permission test occurred.
+- Pending: exact safe scope for separate user-owned Provider/Receiver control bots. No remote bot-control commands or credentials handling were added.
+
+EDGEQUANT SENTINEL v1.9.12 — UI V5.1.1 SINHALA VOICE, BRAND + PROVIDER FILE POSTS (2026-10-25)
+
+- Merged all Telegram-owned/created and joined groups/channels visible to the signed-in account into a searchable destination directory with OWNED / ADMIN / JOINED access labels and explicit multi-select into the shared recipient set.
+- Added Provider POST / POLL UI. Composed plain-text posts and Telegram polls use only the selected destinations, show a recipient confirmation, validate post/poll limits, and do not auto-retry failed or uncertain sends.
+- Expanded Provider performance with read-only live Market positions and pending LIMIT orders, floating P&L grouped by broker currency, per-position open pips, destination-wise signal/trade counts, Market/Limit splits, linked closed MT5 trades, and today best/TP-hit/SL-hit views.
+- Manual MT5 mirror remains opt-in and `magic=0` only; it baselines existing tickets and excludes EA/algorithm orders. It shares the selected recipients, captures that set at enable time, and requires OFF/re-enable to change mirror destinations. Captions contain Entry/current market/SL/TP and monitoring remains read-only.
+- Dashboard Layer 1 quick target is configurable (default +100 pips); Layer 2 exact signal TP and fixed two-layer count remain. Added BE-after-Layer-1 ON/OFF. Added role-aware bilingual Guide / Upades.
+- Signal Receiver now preserves fresh weekend-closed LIMIT-channel posts locally, including exact text and Telegram chat/message ID. The post must pass normal freshness when received (20 minutes by default); only this persisted LIMIT queue gets a maximum 72-hour window from the original timestamp. Keep EdgeQuant running with Telegram connected, or reconnect within 72 hours to resume processing. At the next broker-confirmed open, the engine re-parses the post and re-runs source/idempotency/SL-TP/TP-hit/price-run/symbol/account/risk/broker checks before using the LIMIT-channel pending plan. No closed-market orders, blind retries, or weekend age override for other categories. Expired/invalid/uncertain outcomes go to manual review.
+- Excel packaging explicitly includes `openpyxl` and `et_xmlfile`. `BUILD-EXE.bat` adds a frozen-app smoke test that exports and reopens both Provider and Plan workbooks. The sandbox ran the source export smoke only; no Windows EXE build is claimed.
+- Provider logo export hotfix: if Pillow cannot import, the error now includes the underlying exception and directs the user to rebuild/use the complete `dist/EdgeQuantSentinel` folder. The build preflights Pillow against the bundled PNG, explicitly collects Pillow/image plugins, and the frozen XLSX self-check embeds that logo in both workbooks and verifies `xl/media/` contains an image. Windows/PyInstaller execution remains unverified in this environment.
+- Offline validation: engine self-test **547/547**, desktop self-check **311/311**, Provider V5.1 tests **5/5** (10 combined Provider/Sinhala tests, including missing-Pillow, invalid-image diagnostics and logo embedding), logo-aware XLSX/Plan self-check passed (both ZIPs contain image media), Provider PDF smoke passed, web-agent self-test **13/13**, Python compile and `edgequant_check.py` passed. Weekend-queue regression checks cover initial freshness, durable exact-ID persistence, 72-hour expiry, and TP/price revalidation. No live Telegram send, MT5 order/edit, credentials access, or archive upload. Native Windows rendering/EXE and live account behavior remain unverified.
+
+HISTORICAL BASELINE — EDGEQUANT SENTINEL v1.9.12 UI V5.0.0 PROVIDER AUTOMATION + MANUAL-ORDER MIRROR (2026-10-25)
+
+- Telegram Studio creates PUBLIC destinations with an editable username suggestion based on the chosen name. Only public groups/supergroups and channels accept public usernames; PRIVATE destinations use invite links. Composer destinations merge owned and joined chats, with favorites and a favorites-only view.
+- Added concise guidance for PUBLISH ONLY versus PUBLISH + PROCESS, plus MANUAL, MT5 AUTO (READ-ONLY), and LINKED JOURNAL AUTO. PUBLISH + PROCESS submits a composed signal once to the running local engine. LIVE requires the typed LIVE gate; TEST RUN remains dry. Freshness, exact message-ID idempotency, own-post, channel/account, broker, risk, and other engine guards remain in effect.
+- Linked journal tracking edits published posts with PENDING, OPEN, TP, SL, break-even, cancellation, and close outcomes. For processed signals, choosing the quote-only MT5 mode is redirected to linked journal tracking so actual local trade outcomes are not misrepresented as quote-only status.
+- Added opt-in manual MT5 order mirroring to selected destinations. It copies only `magic=0` manual orders/positions; EA/algorithm orders are excluded. Existing positions/pending orders are baselined and skipped. Captions/table show Entry, current market, SL, TP, Market/Limit/Stop type, and read-only status/outcome updates. The mirror never places or modifies MT5 orders.
+- Added separate Market/Limit signal views and Market/Limit/Stop manual-order views, daily/weekly/monthly statistics with actual/estimated pips won/lost, best-signal history, graph, Excel/PDF export, and optional local-time scheduled EOD Telegram reports. Schedule requires the app open and Telegram logged in; per-date/per-destination delivery markers prevent automatic duplicate or uncertain sends.
+- Extended offline MT5 snapshot reconciliation to expose pending-to-open origin order IDs and to recheck explicitly tracked older positions, so a close during an app outage can be reflected after restart.
+- Validation: Python compilation passed; engine self-test **540/540**; desktop self-check **306/306**; parser **41/41**; external-MT5 tests **4/4**; `edgequant_check.py` exit 0. No Telegram messages, MT5 trades/edits, credentials, or account settings were touched. Windows GUI/EXE/live behavior remains unverified.
+
+EDGEQUANT SENTINEL v1.9.12 — POST-V4.9.0 UNIVERSAL SYMBOL ROUTING (2026-10-22)
+
+- Removed the BROKERS tab's account-add/remove UI. Existing account settings are preserved; if an app-saved account exists and no static account is configured, the saved account list is used without adding a phantom `MAIN` target. Added exact symbol selection for saved MT5 accounts: AUTO, XAUUSD, XAUUSDm, XAUUSDc, or a custom exact Market Watch symbol. Choices live in the separate `edgequant_broker_symbols.json`, apply to every source routed to that account, and are included in local backups. Explicit choices fail closed if absent; no suffix is guessed. `GOLD` remains canonical `XAUUSD`; the screenshot's `XAUUSDc` is available, not hardcoded.
+- Replaced the channel-name-specific teaser rule with a generic guard for every added source: a placed signal missing either SL or TP goes to manual review (explicit MARKET/NOW/INSTANT instructions retain the existing auto-protection path). Fully protected messages continue through freshness, exact Telegram message-ID idempotency, TP-hit, channel/account, LIVE, risk and broker checks. Content/entry-price matching no longer suppresses distinct Telegram posts; only replay of the exact same chat/message ID is blocked.
+- Added exact screenshot parser regressions for TEST LIMIT entries/SL/TP/BE guidance and the complete multi-entry/multi-TP follow-up. Channel routing remains user-selected: TEST LIMIT CHANNEL stays LIMIT; GOLDEN SNIPER stays MARKET.
+- Offline checks: engine self-test **538/538**, desktop self-check **300/300**, parser **41/41**, Python compile and `edgequant_check.py` passed. Per-account symbol resolution was tested with fake MT5 APIs only. No live order or Telegram send occurred. Client config/channel files were not modified; the Windows app/EXE still requires a source update/rebuild.
+
+EDGEQUANT SENTINEL v1.9.12 — UI V4.9.0 PROVIDER STUDIO + REPORTS + DPI ADAPTATION (2026-10-21)
+
+- Integrated Provider-only destination management: separate app-created/owned chats from chats already joined by the logged-in Telegram account; search both lists; save favorites locally; select any number of ordinary/favorite destinations for one publish. Private-chat discovery remains limited to chats the account can access or a supplied link/ID.
+- Published Signal Tracker now provides signal details and tracking state. Load a selected publication into the composer before editing entry, SL, or TP; confirmed edits update the original Telegram posts. Caption edits do not alter MT5 orders. Existing MT5 order changes remain a separate, explicit ticket operation.
+- Added opt-in `MT5 AUTO (READ-ONLY)` quote monitoring, routed through the new read-only `mt5_provider_quote_snapshot()` helper. It does not initialize/switch accounts or place/modify orders. It only edits posts on clear state transitions; a late start, long gap, missed-entry suspicion, or ambiguous SL/TP ordering is sent to manual review. User guidance says the PC and MT5 terminal must stay open; a demo account is acceptable.
+- Added Provider-only day/week/month/all-time performance, including signal counts, wins/losses/BE, win rate, TP hits per level, actual linked-journal pips/USD when available, nominal signal pips, best signal, and tracking details. Reports can include a locally selected provider name/logo as branded Excel/PDF. Trading Plan Excel/PDF exports show day-by-day projection and prominently show current daily-target status/achievement.
+- Added per-monitor Windows DPI-awareness request and adaptive Tk scaling, bounded saved geometry, and actionable MT5 connection guidance.
+- Packaging/requirements now include `provider_studio.py`, Pillow and openpyxl. Offline validation: engine self-test **542/542**, desktop self-check **298/298**, compilation passed; independent quote-transition and all four PDF/XLSX export smoke tests passed. No Telegram message was sent and no MT5 order was placed or modified. Windows native DPI/MT5 diagnosis and PyInstaller build remain unverified. Source-only change: no replacement archive was created or uploaded.
+
+EDGEQUANT SENTINEL v1.9.12 — UI V4.8.4 CHANNEL LIST + MT5 DIAGNOSTICS HOTFIX (2026-10-20, historical baseline)
+
+- Production source defaults remain empty: `LIMIT_CHANNELS = []`, `MARKET_CHANNELS = []`, `CHANNEL_IDS = {}`. The CHANNELS switch table previously mixed configured sources with old journal rows/stale OFF keys and displayed a channel name and its linked Telegram ID as separate rows. It now lists only configured, routable sources and shows a linked name+ID pair once by its friendly name, with ON/OFF state shared across both aliases; unlinked ID-only sources remain visible. Removed the unrelated hard-coded channel name from the help tip. Historical trades remain in journal/report views, not as active channel switches.
+- MT5 polling now captures `MetaTrader5.last_error()` when initialization, terminal info, or account info cannot be read. The Dashboard shows a short reason and the BROKERS page displays the full error. An open MT5 window without a connected terminal/account is identified separately. These checks are read-only and do not send orders.
+- Offline validation: engine self-test **538 passed, 0 failed**; desktop self-check **291 passed, 0 failed**; Python compilation passed. No live Telegram request or MT5 order was attempted. Windows MT5/DPAPI runtime and PyInstaller build remain unverified.
+- This is an unpackaged local source hotfix; no replacement ZIP was uploaded.
+
+EDGEQUANT SENTINEL v1.9.12 — UI V4.8.3 CLIENT-OWNED TELEGRAM API SETUP (2026-10-20)
+
+- Added an English/Sinhala Telegram API setup dialog reachable from LOGIN → API SETUP and Settings → TELEGRAM API SETUP. It has a short how-to, an OPEN TELEGRAM API PAGE button, API ID and masked API hash fields, and SAVE SECURELY.
+- Every customer enters their own Telegram `api_id` and `api_hash`; no publisher's credentials are bundled. The app validates the pair and encrypts it with native Windows DPAPI for the current Windows user under `%LOCALAPPDATA%\EdgeQuant`. Environment variables remain a backward-compatible fallback; saved DPAPI values take precedence.
+- The setup form makes no Telegram request. SEND CODE stays disabled until valid API credentials are available; Telegram is contacted only after the user presses SEND CODE. No login code, message, or MT5 order was sent during implementation.
+- Offline validation: engine self-test **536 passed, 0 failed**; desktop self-check **289 passed, 0 failed**; Python compilation passed. Native DPAPI encryption/decryption and the PyInstaller EXE still require a Windows-PC validation.
+
+EDGEQUANT SENTINEL v1.9.12 — LOCAL DESKTOP UI V4.8.2 FULL SYSTEM + SCREEN-OFF HELPER (2026-10-14)
+
+- Full source package retains the V4.8.1 unknown-signal catch-up fix and adds `SCREEN-OFF-KEEP-LAPTOP-ON.bat`. On AC, it turns the display off after 5 minutes of inactivity and sets sleep to Never. It leaves battery sleep, hibernation, and lid-close settings unchanged; use a charger and keep the lid open.
+- The desktop EXE build script copies the BAT beside the built application. Windows execution of the BAT and EXE build are not verified here.
+- Enabled Telegram sources continue through parsing and existing safety checks. Only a recognized, fresh entry signal proceeds toward the configured MT5 account. Chat/results, unrecognized messages, stale catch-up messages, duplicates, and signals blocked by safety checks are not converted into orders. The raw logged post is required to add a parser format safely.
+- Offline validation: desktop self-check **282 passed**; engine self-test **519 passed**; voice-text **5 passed**; parser **41/41**; fake-MT5 **4/4**; web-agent **10 passed**; Python compile and `edgequant_check.py` passed. No live Telegram/MT5 connection or order was made.
+
+EDGEQUANT SENTINEL v1.9.12 — LOCAL DESKTOP UI V4.8.1 OFFLINE SINHALA VOICE + UNKNOWN-SIGNAL HOTFIX (2026-10-13)
+
+- V4.8.1 fixes an unknown-message notification counter initialized with one element but accessed as a three-element list. An unparsed Telegram post could therefore raise `IndexError: list index out of range`, leave its catch-up cursor held for retry, and block later messages from that source. The counter is now an explicit `[count, date]` pair, with an engine regression test.
+- This hotfix does not turn unrecognized text into a trade or bypass parser/safety rules. A message logged with `action=ignore, confidence=low` is not sent to MT5; the raw post must be inspected before any parser change. No replay or MT5 order attempt was made for the reported incident.
+- V4.8.1 retains V4.8's opt-in local female Sinhala VITS route and the unchanged V4.7 archive. Trading/report-content rules are otherwise unchanged.
+- VOICE panel now offers INSTALL OFFLINE VOICE. After explicit consent, the Windows .bat creates a separate Python 3.11 virtual environment, installs CPU PyTorch 2.2.2 + TTS 0.21.1/soundfile, downloads the Dialog/UoM SinhalaVITS-TTS-F1 model and romanizer, then synthesizes and plays a sample before marking the install ready. The approximately 1 GB checkpoint is not in the source ZIP.
+- Dynamic Sinhala text is expanded into Sinhala number/time/currency/acronym words, romanized locally, and filtered to the published model character set before inference. Sinhala audio stays Sinhala; no English TTS or static clip is substituted for a dynamic live-figure report.
+- The local worker uses a private file queue under LOCALAPPDATA, opens no listening socket, and does not upload report/P&L/order/channel text. Internet is used only when the user runs the installer to fetch software/model files from PyPI/Hugging Face.
+- UI report feedback distinguishes local queueing and Windows SAPI dispatch from an actual worker-confirmed playback result. Windows SAPI dispatch itself is not described as playback confirmation.
+- **Not verified:** Windows runtime installation, Coqui/checkpoint compatibility, model inference, pronunciation/pacing quality, CPU/RAM performance, Windows playback, EXE build, and live MT5/Telegram. This is an integration preview, not a validated Sinhala voice release.
+- Offline checks for the V4.8.1 source snapshot: desktop self-check 281 passed; engine self-test 519 passed; offline voice-text tests 5 passed; parser 41/41; fake-MT5 4/4; web-agent 10 passed; source checker and Python compile passed. See SOURCE-VALIDATION.md.
+
+EDGEQUANT SENTINEL v1.9.12 — LOCAL DESKTOP UI V4.7 LIVE ORDERS + MT5 HISTORY + VOICE DETAILS (2026-10-12)
+
+- V4.7 extends V4.6 and keeps its summary-first Dashboard, existing KPIs, Channel Progress and Manual Trades views. This is a new incremental package; the earlier V4.6 ZIP remains unchanged.
+- Added separate Dashboard Open Trades and Pending Orders tables. Every currently pending MT5 order from configured signal channels is listed with its source/account, symbol/side/lot, entry/current price, SL/TP, received/placed time, wait age and ticket. Active MARKET positions and triggered LIMIT positions appear under Open Trades with floating P&L and active time; after a LIMIT fill, the next live poll moves it from Pending to Open.
+- Live/pending reads cover every configured MT5 account and remain read-only. The existing MT5 account identity/capital header and Dashboard summary are preserved.
+- Added a Journal **MT5 HISTORY** page that groups broker deals by position and renders all history returned by the selected connected terminal, current account balance/equity, realized and floating P&L by currency, and realized P&L by matched signal channel. A broker row that cannot be linked to a local journal source is clearly marked “MT5 Manual / Other EA”; no channel is guessed. History refreshes when the page opens and periodically while it remains selected.
+- Signal/order voice now says signal-received time, account, order parameters and ticket. When an order fills, the event includes the received, placed and activation times plus active order details. Periodic voice summaries now include account balance/equity and realized channel totals. Sinhala never uses English fallback; dynamic Sinhala figures require a matching installed Windows Sinhala speech voice.
+- Preserved incoming-only Telegram processing, existing late/duplicate/TP-hit and other safeguards, exact-two-order/+100-pip/signal-TP behavior, profit-protecting BE, system-awake/display-off behavior, and local-only editing. The local web console remains read-only; no cloud credentials or external backend were added.
+- Validation: desktop self-check **280 passed, 0 failed**; engine self-test **515 passed, 0 failed**; parser **41/41**; offline fake-MT5 **4/4**; web-agent self-test **10/10**; Python compilation and `edgequant_check.py` passed. No MT5 order was sent or edited.
+- Not verified here: Windows UI rendering, Windows SAPI playback or EXE build; a live MT5 terminal/broker; Telegram login/recovery/channel processing; or Supabase/cloud connectivity. MT5 and Telethon packages are not installed in this sandbox. Remote cloud access remains disabled.
+
+EDGEQUANT SENTINEL v1.9.12 — LOCAL DESKTOP UI V4.6 SUMMARY-FIRST DASHBOARD + JOURNAL + SINHALA BRIEFING (2026-10-12)
+
+- V4.6 supersedes the previously supplied V4.5 archive. V4.5 was not the accepted UI/voice fix; do not redistribute or present the V4.5 ZIP as resolving this request.
+- Kept the grouped, role-aware navigation rail, but redesigned the actual Dashboard and Journal workspaces so the change is cohesive. Dashboard is an aggregated daily overview: realized P&L, current MT5 floating exposure, EdgeQuant target progress, positions/pending totals, TP/SL/BE/manual counts, one best-trade spotlight, period summaries, equity curve, source summaries, market session and local safety controls.
+- Removed individual live, pending, and historical ticket rows from Dashboard. TRADE JOURNAL now contains Trade History, Open & Pending, Best Trades and Profit Flow subpages. Detailed rows stay in Journal; live/pending ticket results continue refreshing while Journal is selected. Channel Progress and Manual Trades remain separate main views.
+- P&L scope remains explicit: Dashboard daily realized P&L includes non-EdgeQuant MT5 deals closed today, including positions opened earlier, and excludes EdgeQuant tickets from the external total to prevent double counting. The Daily Target and spoken report remain EdgeQuant-managed only. Manual Trades shows non-EdgeQuant tickets opened today, including other EAs.
+- Reworked the Sinhala briefing into conversational spoken Sinhala with transitions rather than a label-by-label readout. It says the report is EdgeQuant-managed trades only and covers today's realized/open floating P&L, target amount/progress/status, orders/fills/closes, TP/SL/BE/manual results and counts, and the best trade's channel, symbol, direction, result and pips.
+- The Dashboard report action reads today's report without sending Telegram. A matching installed Windows Sinhala speech voice is required for live figures; without one, the app may play only a static Sinhala clip. No English fallback is used.
+- Preserved incoming-only Telegram processing, the exact-two-order/+100-pip/signal-TP plan, profit-protecting BE, local-only ticket editing, and the opt-in Windows system-awake/display-off behavior.
+- Validation: desktop self-check **274 passed, 0 failed**; engine self-test **510 passed, 0 failed**; parser **41/41**; offline fake-MT5 **3/3**; read-only web-agent self-test **10/10**; source checker and Python compilation passed. No trade was opened/modified/closed. Windows rendering/SAPI, EXE packaging and live MT5/Telegram behavior remain unverified in this sandbox.
+
+
+EDGEQUANT SENTINEL v1.9.12 — LOCAL TRADE CENTER + REALIZED CHANNEL PROGRESS (2026-10-12)
+
+- Channel ranking now uses realized net P&L (highest first); win rate is only a tie-breaker. Added a Channel Progress tab with per-channel trade lists and TP / BE / SL / manual-close outcomes.
+- Added a local desktop Manual Trades tab for non-EdgeQuant MT5 positions/orders opened today, including trades from other EAs. Dashboard daily P&L also includes all non-EdgeQuant deals booked today, including exits of positions opened earlier. EdgeQuant-origin tickets are excluded from this external total to prevent double counting.
+- Added a guarded local-only editor for selected open positions and pending orders: pending entry, SL, TP, and profit-only break-even. It rechecks one ticket, blocks removal of an existing SL, validates direction/price rules, and requires an explicit confirmation. When EdgeQuant is running, reads/edits that may select a broker run on its asyncio loop rather than a competing UI thread. The remote web app remains read-only.
+- Parser safeguard remains in place: result captions such as `4179 Hit 📈 80 Pips Done` and `40 Pips Done💸` are ignored; valid signal forms remain actionable, including `GOLD SELL 4173 4177` as a two-price range.
+- Validation: engine self-test **508 passed, 0 failed**; desktop self-check **272 passed, 0 failed**; parser **41/41**; offline fake-MT5 tests **3/3**; Python compile passed. Tests used no live MT5 account and placed no orders. Windows rendering/build and live broker behavior still require verification on the target PC.
+
+EDGEQUANT SENTINEL v1.9.12 — SINHALA VOICE REPORT DETAILS (2026-10-12)
+
+- The periodic 30-minute Sinhala voice update now includes daily target amount/progress/remaining or achieved state, realized P/L, live floating P/L, placed/filled/closed counts, TP/SL/BE/manual counts, best closed trade with its signal source, and best channel.
+- Individual TP/SL/BE/manual/filled voice events include the originating signal channel. Closed events add symbol, side, net result and pips; fills add the entry price.
+- Target milestones and target completion now speak dynamic numbers. Sinhala never falls back to an English voice. A matching installed Sinhala Windows Speech voice is required for dynamic figures; without it, only the static Sinhala event clips play.
+- Set Voice Language to `SI`; detailed event speech must remain enabled. Default report cadence remains 30 minutes; `/update` requests one immediately.
+- Validation: engine self-test **503 passed, 0 failed**; desktop self-check **265 passed, 0 failed**. Offline only; Windows SAPI audio not tested here.
+
+EDGEQUANT SENTINEL v1.9.12 — TEST LIMIT CHANNEL CATCH-UP DISTANCE OVERRIDE (2026-10-12)
+
+- Diagnosed the screenshot: catch-up recognized and parsed the TEST LIMIT CHANNEL SELL, but price was about 57 pips beyond the entry, over the global 40-pip late-run guard; therefore no order was sent.
+- Per request, disabled only the price-run-distance guard for the exact source name `TEST LIMIT CHANNEL`. Other channels retain the global 40-pip guard.
+- The 20-minute original-message age guard, signal-TP-hit guard, incoming-only behavior, duplicate checks, account/channel/risk/LIVE safeguards remain active. The already-processed catch-up post is not automatically replayed; check MT5 before any manual action.
+- Per-channel override can be changed with `/setchannel "TEST LIMIT CHANNEL" late_pips 0` (distance check off) or `late_pips 40` (restore the 40-pip limit).
+- Validation: engine self-test **503 passed, 0 failed**; desktop self-check **265 passed, 0 failed**. Offline only; no live MT5/Telegram test.
+
+EDGEQUANT SENTINEL v1.9.12 — FIXED 2-LAYER PLAN, PROFIT-SAFE BE, AND BILINGUAL PERIODIC REPORT (2026-10-12)
+
+- Locked every entry to exactly two orders. Layer 1 is fixed at +100 pips; Layer 2 keeps the selected signal TP at its exact price. Pending-entry shifting no longer shifts the TP. Legacy `QUICK_TP_PIPS` and `SHIFT_TP_TOO` settings cannot override the plan, and the Desktop Settings form no longer exposes them.
+- Existing multi-target selection remains TP3 when at least three targets are listed, TP2 when there are two, and TP1 when there is one. If no usable signal TP exists, both layers use +100 pips.
+- BE moves now skip losing positions and preserve stops already at break-even or on the profit side. Ticket/broker-scoped calls prevent an unrelated trade from being modified. The adjustable BE ladder remains available.
+- The periodic scheduler checks the configured update interval every 30 seconds (30 minutes by default). Text and voice reports include target amount/progress/remaining or achieved state, realized and live floating daily P&L, order/fill/close counts, TP/SL/BE/manual results, best closed trade with source, and best channel.
+- Sinhala live figures are spoken only with a matching installed Windows Sinhala SAPI voice. Without one, only the Sinhala static event clip can play and a warning is logged; there is no English fallback. Live Windows speech/audio and MT5 execution still require device testing.
+- Validation: engine self-test **492 passed, 0 failed**; desktop self-check **265 passed, 0 failed**; web self-test, source checker, and Python compile passed. Offline checks only; no live Telegram/MT5/SAPI run or Windows EXE build was performed.
+
+EDGEQUANT SENTINEL v1.9.12 — LOCAL DESKTOP UI V4.3 DASHBOARD + TELEGRAM CLARITY (2026-10-12)
+
+- BEST TRADES now opens on ALL history instead of DAILY, so older closed results appear immediately. Full per-trade details remain in the TRADE JOURNAL tab.
+- Weekly/monthly cards now distinguish placed, filled, closed, and missed orders. Their P/L label is explicitly based on trades closed in that period; weekly top-channel ranking also uses closed results only.
+- Preserved incoming-only safety by request: own outgoing posts are still not traded. The listener now emits a short local log line when your own post in a tracked source is ignored, so it is no longer silently invisible. For a one-member private group, another Telegram account/member must send the signal for it to count as an incoming message.
+- V4.3 validation: desktop self-check 264/264, engine self-test 481/481, source validator and Python compile. Live Telegram/MT5 behavior and Windows rendering remain unverified here.
+
+EDGEQUANT SENTINEL v1.9.12 — LOCAL DESKTOP UI V4.2 POWER CONTROL (2026-10-12)
+
+- Added a Dashboard opt-in to keep Windows from entering system sleep while EdgeQuant stays open. It uses ES_SYSTEM_REQUIRED and deliberately does not request ES_DISPLAY_REQUIRED, so the monitor can still turn off on the Windows display timeout. Default is OFF; closing EdgeQuant restores ordinary sleep behavior.
+- The V4.2 power-control behavior is offline-tested at the flag/UI level. Windows power policy, laptop lid actions, and the actual monitor timeout were not testable in this sandbox.
+- V4.2 validation: desktop self-check 262/262, engine self-test 479/479, source validator and Python compile. The Windows/PyInstaller build still needs a Windows PC.
+
+EDGEQUANT SENTINEL v1.9.12 — LOCAL DESKTOP UI V4.1 BUILD FIX (2026-10-11)
+
+- Fixed BUILD-EXE.bat source validation: it now accepts the `desktop 1.9.12 UI-V4.1` build label instead of requiring an exact `desktop 1.9.12` match. Updated the success banner and extraction-folder advice.
+- Regression-checked the same prefix rule locally. The Windows/PyInstaller build itself still requires a Windows PC and has not been run in this sandbox.
+
+EDGEQUANT SENTINEL v1.9.12 — LOCAL DESKTOP UI V4 UPDATE (2026-10-11)
+
+- Upgraded the existing Tk desktop app; no separate web app or static replacement. The previously released V3 ZIP remains unchanged.
+- Filled the previously blank right side of the full header with an animated, raised MT5 identity card: account name/login, broker/company/server, balance/equity, connection state, and conservative REAL/DEMO/CONTEST labeling. Multiple connected accounts list their own names/brokers; unlike currencies are never summed together. The Dashboard repeats broker/account/mode identity.
+- Added layered shadow/accent depth to the Dashboard metric cards and a subtle pulsing account/status border.
+- Added Dashboard → Daily Loss Cap controls (0 = off, local state saved immediately) and verified the UNLOCK TODAY action; unlocking still requires acknowledgement and lasts only for the current day. The cap is no longer in the generic Settings form.
+- Removed the per-channel 400-row limit from the Journal display. Historical records loaded from the full local JSONL journal are accessible with “today only” unchecked and scrolling.
+- Made the joined-chat onboarding more discoverable: ADD SOURCE / SEARCH JOINED GROUPS opens a live name filter over Telegram chats visible to the account. Already-joined private groups can be selected without invite links; source selection is saved by name + Telegram ID and monitored after START. The existing stop/singleton safeguards remain.
+- Added localized voice greetings at desktop startup and after successful Telegram login. Sinhala mode uses Sinhala-only sentences/clips and does not fall back to English.
+- Daily-target completion now explicitly forces the selected-language voice alert once per day, even when ordinary event speech is off; Sinhala uses the bundled target_done recording.
+- Daily Target controls remain in their dedicated Dashboard section. Update voice, compounding, stop-after, and Telegram updates are explicit opt-ins outside Settings.
+- V4 validation: desktop self-check 261/261, engine self-test 479/479, source validator and Python compile. V4.1 fixes the Windows build-version guard. Actual MT5/Telegram services, Windows audio playback and EXE runtime remain unverified in this environment.
+
+EDGEQUANT SENTINEL v1.9.12 — DEVELOPMENT RELEASE NOTES
+
+- Shipped source-channel defaults are empty. After Telegram login, the app selects CHANNELS and scans visible joined chats; source selection supports Ctrl/Shift multi-select and saves names + IDs into the engine's live processing settings.
+- Source scanning is stopped-bot-only and uses the existing singleton lock. A pending Telegram LOGIN client/dialog blocks a scan. Removing a source changes EdgeQuant settings only; it never leaves or deletes the Telegram chat.
+- Public Telegram Studio group/channel creation now pre-fills a valid editable username suggestion. Telegram still decides whether the username is globally available.
+- Telegram Studio can publish to multiple selected destinations, choose a custom image logo, and record sent message IDs locally. Providers can mark TP progress, break-even, SL/close, edit, or delete the tracked posts across destinations. Local processing remains a one-time per-signal choice, with the Studio LIVE gate retained.
+- Added Telegram join-request load/approve/decline controls and member invite/contact selection flows.
+- Desktop LIVE startup now uses account/risk review + an explicit checkbox instead of typing the literal word. TEST RUN remains the no-real-orders path.
+- Trade journal/calendar/reports now include signed realized pips, signal/fill/close timestamps, entry/SL/TP/exit levels, and best five realized trades.
+- Reworked the first-entry screen to match the approved compact role-chooser concept: reduced brand header, cloud-off badge, hero/callout, large accent Provider/Receiver cards, and bottom action bar. Trading controls, native menu, and status bar return after opening a workspace. Local selection opens Provider → SIGNAL STUDIO or Receiver → local Dashboard/source tools; it is not a cloud-verified identity. Provider-only SIGNAL STUDIO is hidden from Receiver. A general local MT5 mode remains available.
+- Cloud is intentionally disconnected for this UI stage. `CLOUD_BACKEND_ENABLED = False` hides account/login/group/feed screens, replaces Provider cloud publishing with a later-stage placeholder, and blocks `_cloud_run` before any network request. The local-profile screen clearly states no cloud sync, login, shared groups, or database request is active. Telegram and MT5 local integrations remain separate.
+- SIGNAL STUDIO retains validated branded publishing with 1–10 TP levels, SL, single/range entries, LIMIT/MARKET, BE advice, image logo, multi-destination Telegram publishing, optional local processing, and the existing LIVE confirmation gate. Supabase group publishing is not available until a later stage.
+- The Supabase auth, provider-group, receiver-request, shared-signal, and report code is retained for the future integration phase, but is not reachable through this local UI build. No Supabase credentials, cloud session, or sync request is started.
+- Local Telegram/MT5 functions remain unchanged. Live Telegram/MT5 behavior and Windows packaging still require separate tests; cloud/email/RLS behavior remains unconnected and was not tested against a project.
+- Daily Target setup stays on the Dashboard target board: target amount/mode/capital, compounding, stop-after, and periodic update options were removed from the generic Settings form. Trading logic is unchanged.
+- Empty source defaults and local credential environment setup remain development requirements. Run both offline checks before release.
+
+This is not a commercial production release. The cloud project, custom email sender, live Telegram API credentials, Windows EXE, offline license/activation, and real MT5 account tests are not configured here.
+
+UI V5.1.1 PATCH (2026-10-25)
+- Added the user's EdgeQuant logo as the default brand artwork and refreshed compact UI/window icons. Provider signal/report and notification defaults use the full logo; custom logo settings are preserved.
+- Provider POST now supports a selected local file with optional caption and a destination confirmation. Added caption bounds and local fake-client coverage.
+- Telegram polls use Telethon's high-level media-send interface; failures now log each destination's actual exception. No automatic retry was introduced.
+- Sinhala voice panel makes the missing Sinhala SAPI/offline model prerequisite explicit. Dynamic Sinhala is never silently replaced with English. The optional offline model still needs local Windows installation and playback testing.
+- Offline checks: engine **548/548**, desktop **311/311**, Provider/Sinhala **10/10**, logo-aware XLSX and Provider/Plan PDF embedding pass, `edgequant_check.py` exit 0, web-agent **13/13**. No Telegram/MT5 live action or Windows EXE build was performed.
+

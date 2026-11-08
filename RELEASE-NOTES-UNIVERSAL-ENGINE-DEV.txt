@@ -1,0 +1,13 @@
+EdgeQuant Sentinel — Universal Engine / Private Group / Dashboard Development Update
+
+This is a source development build based on the existing v1.9.12 UI-V5.1.13 project. It is not a final Windows installer.
+
+- Corrected XAUUSD LIMIT fixed offsets and 49.90-pip Layer 1 TP.
+- Preserved original Layer 2 TP and signal SL for XAUUSD LIMIT orders.
+- Restored four intended order records for two-price range signals (two entries × two layers), with invalid cases held for manual review.
+- Added persistent execution review queue with revalidation and explicit Execute/Reject actions.
+- Added Dashboard broker/live spread monitor and configurable spread limit.
+- Added private Telegram group invite-link join flow; private groups post as the connected account, while public channels keep Send As permission checks.
+- Updated regression tests and internal self-tests.
+
+Validation: 59 pytest tests passed; engine self-test 555/555; desktop self-check 324/324; source checker passed. MT5/Telegram live integration and Windows installer remain untested in this environment. See UPGRADE-STATUS.md.

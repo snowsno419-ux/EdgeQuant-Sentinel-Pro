@@ -1,0 +1,27 @@
+EdgeQuant Sentinel v1.9.12 — UI V5.1.9
+2026-10-29
+
+Confirmed signal strategy and management follow-up implementation
+
+Layer behavior
+- Layer 1 quick TP default is +49 pips per entry (previous default +50).
+- Layer 2 retains the existing selected signal TP behavior, including moving the selected target 10 pips toward the adjusted entry.
+- Two orders per entry remain fixed. A signal entry range gives two layers at each entry.
+- Pending BUY entry offset remains +10 pips; pending SELL entry offset remains -10 pips.
+- Signal SL remains unchanged.
+- “Take 50 pips profit” is not interpreted as an immediate close command.
+
+Follow-up management
+- Clear Telegram management updates are scoped to the exact source chat, source/category, explicit symbol, BUY/SELL direction, and exact original signal entry.
+- An update is applied only when exactly one original Telegram signal ID has open journaled tickets at that entry. Both layers from that original signal are grouped.
+- Each management API receives the exact matched ticket list and the recorded broker/account. No unscoped/fuzzy trade selection is used.
+- Missing symbol/side/entry, no open match, multiple original signal IDs, conditional/advisory language, unavailable MT5, missing durable linkage, and failed persistence all fail closed to manual review/no action.
+- BE updates obey the owner's AUTO BE ON/OFF control and positive owner trigger. Channel wording cannot enable BE or replace the configured trigger.
+- New entry records persist the originating Telegram chat ID alongside exact message ID, signal entry, source, category, broker and tickets.
+- Exact chat/message-ID replay is suppressed; distinct posts are not deduplicated by matching text.
+
+Build and validation
+- Offline unit coverage includes exact-entry matching, ambiguity, source/chat/side/entry isolation, active-ticket filtering, pending TP scope, and protection of complete new signals.
+- Engine and desktop self-checks, full unit suite, Python compilation, source audit, packaged MT5 native import-only check, and clean Windows 10/11 x64 non-live install remain required.
+- Do not distribute this source kit or a client installer until Windows build, MT5 import-only and clean Windows installation checks pass.
+- No credentials, Telegram sends, MT5 initialize/orders, or live trading were used for implementation.

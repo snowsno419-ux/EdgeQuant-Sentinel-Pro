@@ -1,0 +1,18 @@
+# Live listening (Telegram -> signal file). Needed on the machine running the listener.
+telethon>=1.41,<2
+
+# Provider Signal Studio branded editable Excel and PDF exports.
+# et_xmlfile is openpyxl's XML writer; it is listed explicitly for EXE bundling checks.
+openpyxl>=3.1
+et_xmlfile>=2.0
+Pillow>=10
+
+# ONLY needed if you use the optional "direct_execution" mode (listener talks to the
+# MT5 terminal itself, no EA). Windows only. If you use MT5Executor.mq5 + the EA path,
+# you can skip this line.
+# MetaTrader5>=5.0.45
+
+# Remote command envelope verification (Ed25519) and HTTPS client.
+# Required by edgequant_remote_agent.py and its release tests.
+cryptography>=44,<47
+requests>=2.31,<3

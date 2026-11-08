@@ -1,0 +1,35 @@
+EDGEQUANT SENTINEL — UI / JOURNAL / MANUAL MT5 MIRROR UPDATE
+
+Included changes
+1. Trade Journal Excel export
+   - Reworked XLSX writing with openpyxl.
+   - Uses a temporary file followed by an atomic replace.
+   - Reopens and validates the generated workbook before reporting success.
+   - Sanitizes invalid XML control characters and non-finite numeric values.
+   - Applies readable headers, filters, freeze panes, table formatting and numeric formats.
+   - Desktop export now asks for a destination and reports success/failure to the user.
+
+2. Manual MT5 order -> Telegram mirror
+   - Public-facing message format is now a professional EDGEQUANT TRADE SIGNAL.
+   - Includes the destination group/channel name for each individual destination.
+   - Does not expose lot size, MT5 ticket, broker, or account details.
+   - Keeps the existing magic=0 manual-order restriction; EA-generated trades are not mirrored by this feature.
+
+3. Desktop UI polish
+   - OCEAN dark/cyan theme is the default for fresh installations.
+   - Improved typography, spacing, navigation and table readability.
+   - Existing saved theme selection remains respected.
+
+Offline validation performed in the development environment
+- Python compilation: passed.
+- Engine self-test: 555 passed, 0 failed.
+- Desktop self-check: 322 passed, 0 failed.
+- Pytest: 55 passed, 11 subtests passed.
+- XLSX package self-check: passed.
+
+Important limitations
+- This archive is the updated SOURCE / DEVELOPMENT KIT, not a built Windows client installer.
+- No Windows EXE or Setup.exe was built or verified in this environment.
+- Before distributing to customers, build on Windows using the provided build scripts and test installation on a clean Windows 10/11 x64 PC without Python.
+- Do not distribute source files to customers. The client installer build and source-protection workflow must be validated separately.
+- No live Telegram messages, MT5 logins, or trading orders were sent during these checks.

@@ -1,0 +1,34 @@
+EDGEQUANT SENTINEL - LIVE MARKET PRICE, MULTI-TIMEFRAME TREND & VOICE UPDATE
+
+Dashboard additions
+- Prominent XAUUSD mid-price display from the currently connected MT5 terminal.
+- Bid and Ask remain visible; the displayed market price is explicitly the midpoint.
+- Quote refresh is polled approximately every 1.5 seconds while Dashboard is active.
+- M5, M15, H1 and H4 trend labels are calculated from MT5 candle history using EMA 20/50
+  plus the latest close relative to EMA20. Trend history refreshes approximately every 20s.
+- Trend labels are descriptive (BULL / BEAR / RANGE); insufficient or unavailable history
+  is shown as unavailable rather than guessed.
+- Added SPEAK MARKET UPDATE action. It reads the live quote and all four timeframe labels.
+- Speech follows the existing Voice settings: Sinhala uses the configured Sinhala female
+  Windows voice or the optional local Dialog/UoM Sinhala female VITS model; English uses
+  the configured Windows voice path. Sinhala and English are selectable in Voice settings.
+- Speech is generated on demand and is not an autonomous prediction. It states that the
+  trend summary is technical context, not a guaranteed forecast or trade signal.
+
+Safety and limitations
+- Market data is read-only and comes from the connected MT5 terminal; no synthetic price
+  or external price feed is substituted.
+- If MT5 is disconnected or quotes/candles are stale/unavailable, the UI indicates this.
+- Trend classification is a simple EMA-based technical description, not an AI forecast.
+- Voice quality and actual audio playback must be listened to and verified on the user's
+  Windows PC. Sinhala offline VITS requires the separately installed model/runtime.
+- Existing order execution, spread guard, Manual Review, Telegram Studio and Auto STOP
+  behavior are preserved by this change.
+
+Verification in this workspace
+- Python compilation passed for edgequant_auto.py, edgequant_desktop.py and
+  edgequant_sinhala_voice_worker.py.
+- pytest: 61 passed, 11 subtests passed.
+- edgequant_auto.py --selftest: 555 passed, 0 failed (rerun after final UI change below).
+- Windows rendering, MT5 live quotes/candles, Windows EXE/installer build, and real audio
+  playback were not available for verification in this workspace.

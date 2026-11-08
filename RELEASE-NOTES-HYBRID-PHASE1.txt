@@ -1,0 +1,22 @@
+EDGEQUANT SENTINEL — HYBRID UPGRADE PHASE 1
+2026-11-01
+
+- Preserved the existing Tkinter desktop and Python trading engine.
+- Removed automatic LIMIT-to-STOP conversion from planning and final execution revalidation.
+- Invalid or changed pending-order conditions now require explicit Manual Review.
+- Preserved adjusted XAUUSD LIMIT entry price, SL, TP and both layer records.
+- Dashboard trend labels now show full names and requested colors.
+- Updated self-test and regression expectations.
+
+Validation:
+- pytest: 61 passed, 11 subtests passed
+- engine self-test: 555 passed, 0 failed
+- desktop self-check: 324 passed, 0 failed
+- Excel self-check: passed
+
+Not included in this phase:
+- Electron/React migration and Python bridge
+- Windows EXE / installer build
+- Live MT5 or Telegram verification
+
+See HYBRID-UPGRADE-STATUS.md for detailed findings and limitations.

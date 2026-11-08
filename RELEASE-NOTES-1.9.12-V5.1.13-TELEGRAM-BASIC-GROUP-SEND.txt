@@ -1,0 +1,15 @@
+EdgeQuant Sentinel v1.9.12 — UI V5.1.13
+2026-10-29
+
+Telegram private basic-group send compatibility
+
+- Owner explicitly selected the signed-in Telegram account as sender for private basic groups.
+- Telegram basic `Chat` peers do not have the channel/supergroup Send As identity list. The app now detects only the basic `Chat` peer type, skips `channels.getSendAs` for that type, and sends as the signed-in account without a `send_as` override.
+- Channels and supergroups still require Telegram to authorize the exact selected destination identity. Permission/API errors remain fail-closed; there is no personal-account fallback from a failed channel/supergroup Send As attempt.
+- Regression test verifies the basic-group path does not call `GetSendAsRequest` and does not pass `send_as=chat`.
+- The V5.1.12 change remains: parsed valid trade signals are not rejected by the 40-pip price-run condition. Freshness, TP-hit, message-ID, channel, broker/account, LIVE and risk checks remain.
+
+Deployment note
+
+- This is source/build kit only; current running EXE is unchanged. No Telegram message was sent and no MT5 order was placed during development.
+- Build and test on Windows 10/11 x64 in non-live mode before client distribution. Client PCs receive only Setup.exe; no source or personal settings.

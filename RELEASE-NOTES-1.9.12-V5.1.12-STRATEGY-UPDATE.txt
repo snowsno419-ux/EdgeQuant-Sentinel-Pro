@@ -1,0 +1,15 @@
+EdgeQuant Sentinel v1.9.12 — UI V5.1.12
+2026-10-29
+
+Owner-directed signal intake correction
+
+- Removed the 40-pip late-entry/price-run skip for all successfully parsed trade signals. A recognized signal is no longer rejected solely because market price moved beyond its entry. This addresses the screenshot's SELL 4033 signal skipped at 66 pips past entry.
+- The user's confirmed signal formats continue through the existing parser. The BUY -10 / SELL +10 pip offsets remain global; the original signal SL is unchanged.
+- The opposite-direction hedge block remains removed.
+- Existing freshness/age, already-hit TP, exact Telegram message-ID, enabled-channel, account/broker, market/news/spread/cap, LIVE and monetary-risk checks remain. The screenshot's `action=ignore`, `confidence=low`, `not a signal` messages were not parsed as trade signals and are not the SELL 4033 rejection.
+- The old `late_pips` setting is retained only for compatibility with existing local settings; it no longer rejects parsed signals.
+
+Important deployment status
+
+- Source/build kit only. The source update cannot change the already-running Windows EXE or existing pending MT5 orders. Rebuild and verify on Windows 10/11 x64 in non-live mode before relying on it.
+- No Telegram sends or MT5 orders were attempted during development. Client distribution remains Setup.exe only, and only after successful clean Windows testing.

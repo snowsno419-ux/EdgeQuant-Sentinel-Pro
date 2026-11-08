@@ -1,0 +1,16 @@
+EdgeQuant Windows Client Installer - Diagnostic Build
+
+WHAT TO DO
+1. Extract this ZIP into C:\EQBuild (not nested deeply in Downloads).
+2. Open C:\EQBuild\EdgeQuant and run RUN-CLIENT-INSTALLER-KEEP-OPEN.bat.
+3. If the installer stops, run CHECK-INSTALLER-ERROR.bat.
+4. It creates EDGEQUANT-INSTALLER-DIAGNOSIS.txt and shows the last 90 log lines.
+5. Send only the specific latest error lines, with phone numbers, passwords, keys, and session details redacted.
+
+This diagnostic update DOES NOT claim that a Windows Setup.exe was built or tested.
+The existing release tests and failure-stop gates remain enabled.
+The source is the latest EdgeQuant Client Installer Cryptography Dependency Fix version;
+this package shortens the extraction path and adds diagnosis tools.
+
+Avoid overwriting live configuration/session files or changing the running trading system.
+Use a separate build folder, not the folder holding your production account data.

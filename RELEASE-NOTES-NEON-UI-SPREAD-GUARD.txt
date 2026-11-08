@@ -1,0 +1,22 @@
+EDGEQUANT SENTINEL - NEON UI / SPREAD-AWARE LIMIT VALIDATION
+
+- Refreshed the default OCEAN palette into a dark-neon graphite/cyan/violet theme.
+- Preserved existing navigation, controls, animations, account panels, Telegram Studio,
+  MT5 workflows, Auto STOP, risk controls, and existing settings.
+- LIMIT entries are not silently repriced to chase a changing spread. The signal-derived
+  entry remains intact; live bid/ask, broker stop-distance, tick-size, direction and the
+  configured MAX_SPREAD_PIPS guard are checked before submission/revalidation.
+- If the live spread exceeds the configured limit, the order is sent to Manual Review
+  rather than being silently moved to a different price. This avoids changing the
+  signal's intended strategy or disguising a worse fill as the original entry.
+- Corrected Telegram group classification: private megagroups without a public username
+  post as the signed-in account; public supergroups/broadcast channels retain the
+  destination identity permission check.
+
+Verification performed in this environment:
+- Python compilation: edgequant_desktop.py and edgequant_auto.py passed.
+- pytest: 59 passed, 11 subtests passed.
+- edgequant_auto.py --selftest: 555 passed, 0 failed.
+
+Not verified here: Windows GUI rendering, Windows EXE/installer build, live Telegram
+publishing, or live MT5 order execution. Use a demo account for acceptance testing.

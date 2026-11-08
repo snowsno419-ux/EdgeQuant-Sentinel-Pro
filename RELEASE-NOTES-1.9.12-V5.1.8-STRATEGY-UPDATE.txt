@@ -1,0 +1,13 @@
+EDGEQUANT SENTINEL v1.9.12 — UI V5.1.8 TELEGRAM DESTINATION RESOLUTION FIX (2026-10-28)
+
+TELEGRAM STUDIO DESTINATION LOOKUP
+- Fixed a peer-resolution defect where a legacy/raw numeric Telegram ID could alias different peer types because Telegram's user, basic-chat, and channel ID ranges overlap.
+- Destination lookup now prefers the exact marked peer ID returned by Telethon for the selected channel/group.
+- Legacy/raw-ID fallback is accepted only if it identifies one unique dialog. If it matches multiple peer types, the operation stops and asks the user to refresh the destination list and reselect. No message is sent on ambiguity.
+- The exact destination Send As permission preflight remains mandatory. Messages continue to use send_as=the selected destination. No fallback to the signed-in user's personal identity was added.
+
+VALIDATION AND SCOPE
+- Added an offline regression test with a colliding basic-group/channel raw ID; verifies exact marked channel ID wins even when the basic group appears first, and ambiguous raw-ID selection fails closed.
+- Validation: engine self-test **554/554**; desktop headless self-check **320/320**; full unit suite **38/38**; `edgequant_check.py` exit **0**; `python -m py_compile *.py` passed.
+- No Telegram message, MT5 initialize/order, credential access, or live action was performed during this update.
+- This is a source/build-kit update only. No client EXE is included. Windows rebuild, MT5 native import-only check, and clean Windows 10/11 x64 non-live install/test remain required.

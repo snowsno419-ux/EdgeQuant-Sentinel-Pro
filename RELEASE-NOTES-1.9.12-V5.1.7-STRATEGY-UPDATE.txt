@@ -1,0 +1,27 @@
+EDGEQUANT SENTINEL v1.9.12 — UI V5.1.7 STRATEGY + SIGNAL UPDATE (2026-10-28)
+
+SIGNAL / ORDER RULES
+- Fresh-install Layer 1 quick target: +50 pips.
+- A two-price entry range places two layers at each endpoint (four planned orders total).
+- Pending BUY entries shift upward by 10 pips; pending SELL entries shift downward by 10 pips.
+- Layer 2 selects TP3 when the signal has at least three targets; otherwise the existing TP fallback applies. The selected TP moves 10 pips toward the adjusted entry. XAUUSD pip size remains 0.1, so this equals 1.0 price unit.
+- Signal SL stays exactly unchanged. Missing/ambiguous SL or TP, invalid direction/target, or other failed safety checks remain review-only; the receiver does not trade arbitrary posts.
+- Market orders continue to fill at the broker quote; their selected Layer 2 target receives the same inward TP adjustment.
+
+OPTIONAL BREAK-EVEN
+- Dashboard now has an AUTO BE ON/OFF master switch. Default is OFF.
+- When ON, the trigger/ladder defaults to +50 pips. Channel BE hints are advisory and cannot override the user's switch/threshold.
+- Legacy implicit 25/70-pip defaults are migrated to the approved +50-pip default; other configured non-default values remain editable.
+
+MESSAGE-ID SAFETY
+- A valid corrected edit may be reconsidered only when the exact same Telegram chat/message ID has durable review-only records and no order intent.
+- Once any order intent exists, or the latest status is blocked/uncertain, edits/replays are suppressed. The corrected signal still passes ordinary freshness, TP-hit, own-post, LIVE, risk, channel/account, broker, and weekend-LIMIT gates.
+- Different Telegram message IDs are not content-deduplicated.
+
+VALIDATION
+- Offline engine self-test: 553 passed, 0 failed.
+- Desktop source self-check: 320 passed, 0 failed.
+- Unit tests: 38 passed.
+- edgequant_check.py: passed; Python compilation: passed.
+- No Telegram send, MT5 initialize/order, credential/settings access, or live trade was performed.
+- The Windows MT5 import-only log and Windows 10/11 x64 build/non-live checks are still pending. This ZIP is a developer source/build kit, not a ready client EXE.

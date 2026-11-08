@@ -1,0 +1,1 @@
+V5.1.13 sanitized owner/developer source/build kit. Runtime settings, credentials, Telegram sessions, local logs, journals and personal channel identifiers are excluded. Keep private; clients receive only a tested Setup.exe.

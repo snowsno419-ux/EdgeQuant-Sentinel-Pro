@@ -1,0 +1,15 @@
+EdgeQuant Sentinel v1.9.12 — UI V5.1.11
+2026-10-29
+
+Owner-confirmed trade intake corrections
+
+- Mandatory entry offsets remain BUY -10 pips and SELL +10 pips globally. Gold examples: BUY 4039 -> 4038; SELL 4042 -> 4043; BUY 4055 -> 4054. The original signal SL is unchanged.
+- The opposite-direction hedge block remains removed. Existing BUY positions alone do not block valid SELL signals, and vice versa.
+- An explicit channel-specific price-run exception now matches the exact configured channel title and the exact Telegram `Chat` or `Group` suffix. The explicit owner exception takes precedence over a saved per-channel late-distance value. It does not fuzzy-match longer or similar names.
+- This exception disables only the price-distance check. Signal age/freshness, TP-hit, exact Telegram message-ID, channel ON/OFF, valid SL/TP, broker/account, market/news/spread/cap, LIVE and monetary-risk guards remain active.
+- Layer 1 stays +49 pips; Layer 2 retains the selected signal TP moved 10 pips toward entry. Exact-entry follow-up management and owner-controlled BE remain.
+
+Important live-app limitation
+- The source update does not edit an already-running EXE, switch a local channel ON/OFF, or modify an existing MT5 order. The owner must enable the desired channel in the local Channels tab and rebuild/test the updated source.
+- The downloadable build kit is sanitized: real channel names and local settings are intentionally excluded. In that sanitized build, set the intended channel's local late-distance override to 0 in the app if you want only its price-run check disabled; preserve its freshness/TP-hit and all other gates.
+- No Telegram sends or MT5 orders were attempted during development. Windows native import-only and clean Windows 10/11 x64 non-live install checks are still required before client distribution.
