@@ -1,0 +1,4 @@
+MetaTrader5>=5.0.45
+cryptography>=44,<47
+
+Telethon==1.42.0
