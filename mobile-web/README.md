@@ -1,14 +1,26 @@
-# EdgeQuant Sentinel Pro — PC-inspired Mobile + Web UI
+# EdgeQuant Sentinel Pro — Mobile + Web Cloud Integration (Phase 4.0)
 
-This is a responsive static UI adaptation of the actual EdgeQuant Neon Dark Pro 2.0 Windows desktop menus and dashboard labels, **NOT** a copy of the Windows trading engine. Source reference: `edgequant_desktop.py` from the owner-supplied 2026-11-13 v2.0.4.1 source package and its offline 1366×768 preview.
+**Status: read-only cloud API bridge published; database and MT5 worker NOT connected. No live trading.**
 
-## Screen coverage
-Dashboard, Channels, Brokers / MT5, Trade Journal, Channel Progress, Manual Trades, Profit Calendar, Trading Plan, Local Profile, Signal Studio, Advanced, Signal Preview, Activity, Settings, Guide and Workspace Setup. Mobile users get a bottom navigation plus accessible full side rail; desktop gets the familiar Neon Dark header, sidebar and controls.
+The Neon Dark Pro PC-style web UI runs on Vercel. It now calls same-origin /api/health every 30 seconds. Verified account logins can eventually read their own DEMO MT5 broker snapshots from /api/dashboard. Until PostgreSQL and a Windows DEMO worker are provisioned, the site deliberately displays **API ONLINE · DB OFF** and MT5 **OFFLINE**. It does not fabricate trading balances.
 
-## Safety and current limitations
-This is a **public UI DEMO only**. No broker connection, trade execution, Telegram login, cloud auth, tenant database or payments are connected. Live balances and prices intentionally show em dashes. START is disabled; TEST RUN affects only the browser label. Local controls are *drafts saved in browser localStorage only* and have no effect on live trading. Never enter passwords, OTPs, Telegram session strings, real account IDs or secrets.
+## Architecture
+- mobile-web/index.html, styles.css, app.js — responsive public frontend. Browser draft settings do NOT change live trades
+- mobile-web/api/health.js — cloud API reachability and configuration status
+- mobile-web/api/login.js, me.js, dashboard.js — verified email + authenticator login, httpOnly cookie sessions and tenant-filtered read-only broker snapshots (fail closed without DB)
+- mobile-web/api/worker-observation.js — Ed25519-verified DEMO account observations with replay/out-of-order protections (fail closed without DB)
+- mobile-web/api/_lib — server-only helper modules, not public frontend content
+- mobile-web/package.json — pinned PostgreSQL driver (pg)
 
-Production requires secure cloud backend, per-tenant provisioning, Windows MT5 workers, encrypted secret management, audited API actions and DEMO acceptance testing. Existing Windows execution/desktop source is neither embedded in nor published by this folder.
+A separate Windows DEMO-only read-only MT5 relay has been developed but is **NOT** installed, publicly deployed or connected. No broker passwords, Telegram OTP/session or worker private keys belong in this GitHub repository.
 
-## Deploy
-Vercel Git project `edgequant-mobile-web`, repository `snowsno419-ux/EdgeQuant-Sentinel-Pro`, `main` branch, **rootDirectory** `mobile-web`, framework `Other`/static, no build command. HTTPS domain is `https://edgequant-mobile-web.vercel.app`.
+## Still required before real data
+1. Provision managed, private PostgreSQL and apply reviewed database migration; configure DATABASE_URL as a **Vercel secret**, never as a public NEXT_PUBLIC variable
+2. Securely provision verified user accounts + 2FA recovery, broker-account references and assigned worker Ed25519 public keys, with least privilege and audit
+3. Run an isolated read-only worker with an already logged-in Windows MT5 DEMO terminal, confirm exact broker identity and timestamps
+4. Test from Android and desktop with actual authenticated live broker observations, tenant boundaries and worker restarts
+
+## Not available
+No real Telegram integration, automated signal execution, BE/trailing/close, payments, Provider marketplace, 100-client workers, or live MT5 orders. Original Windows desktop trading logic is unchanged. Do not put real trading credentials into the public UI.
+
+GitHub main branch auto-deploys to Vercel.
