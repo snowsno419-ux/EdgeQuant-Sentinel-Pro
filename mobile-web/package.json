@@ -1,0 +1,9 @@
+{
+  "name": "edgequant-web-readonly-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read-only MT5 DEMO telemetry API; zero trade execution",
+  "dependencies": {
+    "pg": "8.13.1"
+  }
+}

@@ -1,0 +1,9 @@
+'use strict';
+const {randomBytes}=require('node:crypto'),{answer,sha,passwordValid,totpValid}=require('./_lib/core'),{db}=require('./_lib/db');
+module.exports=async(req,res)=>{if(req.method!=='POST')return answer(res,405,{error:'method_not_allowed'});const pool=db();if(!pool)return answer(res,503,{error:'auth_not_configured'});
+const origin=req.headers.origin,host=req.headers.host;let good=false;try{good=!!origin&&!!host&&new URL(origin).host===host&&new URL(origin).protocol==='https:'}catch{}if(!good)return answer(res,403,{error:'invalid_origin'});
+const {email,password,code}=req.body||{};if(typeof email!=='string'||email.length>254||typeof password!=='string'||password.length>256||typeof code!=='string'||code.length!==6)return answer(res,400,{error:'invalid_credentials_format'});
+try{const r=await pool.query('SELECT id,email,role,password_hash,totp_secret,locked_until,email_verified,failed_logins FROM users WHERE email=$1',[email.toLowerCase().trim()]),u=r.rows[0];if(!u||!u.email_verified||!u.totp_secret||u.locked_until&&new Date(u.locked_until)>new Date())return answer(res,401,{error:'invalid_credentials'});
+if(!passwordValid(password,u.password_hash)||!totpValid(u.totp_secret,code)){await pool.query("UPDATE users SET failed_logins=failed_logins+1,locked_until=CASE WHEN failed_logins+1>=5 THEN NOW()+INTERVAL '15 minutes' ELSE locked_until END WHERE id=$1",[u.id]);return answer(res,401,{error:'invalid_credentials'})}
+await pool.query('UPDATE users SET failed_logins=0,locked_until=NULL WHERE id=$1',[u.id]);const token=randomBytes(40).toString('base64url');await pool.query("INSERT INTO sessions(token_digest,user_id,expires_at) VALUES($1,$2,NOW()+INTERVAL '8 hours')",[sha(token),u.id]);res.setHeader('Set-Cookie','__Host-eq_session='+token+'; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=28800');return answer(res,200,{ok:true,role:u.role,mode:'READ_ONLY'})}
+catch{return answer(res,503,{error:'auth_service_unavailable'})}};
