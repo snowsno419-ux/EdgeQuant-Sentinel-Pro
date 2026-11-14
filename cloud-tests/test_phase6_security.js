@@ -6,7 +6,7 @@ const TG=require('../mobile-web/api/_lib/telegram');
 const {canonical,verifyObservation}=require('../mobile-web/api/_lib/core');
 function req(method,body={},headers={}){return {method,body,headers:{origin:'https://edgequant-mobile-web.vercel.app',host:'edgequant-mobile-web.vercel.app','content-type':'application/json',...headers}}}
 function res(){return {headers:{},statusCode:0,body:null,setHeader(k,v){this.headers[k]=v},status(n){this.statusCode=n;return this},json(x){this.body=x;return this}}}
-function loadHandler(name,mockDb){const path=require.resolve('../mobile-web/api/_lib/db');const original=require(path),old=original.db;original.db=()=>mockDb;const handlePath=require.resolve('../mobile-web/api/'+name+'.js');delete require.cache[handlePath];const handler=require(handlePath);return {handler,reset(){original.db=old;delete require.cache[handlePath]}}}
+function loadHandler(name,mockDb){const path=require.resolve('../mobile-web/api/_lib/db');const original=require(path),old=original.db;original.db=()=>mockDb;const routePath=['signup','resend-verification','verify-email','totp-setup','totp-confirm','channels','telegram-observation','telegram-inbox'].includes(name)?'../mobile-web/api/_lib/routes/'+name+'.js':'../mobile-web/api/'+name+'.js';const handlePath=require.resolve(routePath);delete require.cache[handlePath];const handler=require(handlePath);return {handler,reset(){original.db=old;delete require.cache[handlePath]}}}
 test('signup validation strict input shape and role lock',()=>{
  assert.deepEqual(S.validateSignup({email:' A@EXAMPLE.COM ',password:'StrongPass1234',role:'receiver'}),{email:'a@example.com',password:'StrongPass1234',role:'receiver'});
  for(const bad of [{email:'a@example.com',password:'pass',role:'receiver'},{email:'a@example.com',password:'StrongPass1234',role:'admin'},{email:'a@example.com',password:'StrongPass1234',role:'receiver',mt5_password:'secret'},{email:'invalid',password:'StrongPass1234',role:'receiver'}])assert.equal(S.validateSignup(bad),null)
@@ -40,5 +40,5 @@ test('telegram ingestion rejects bad signatures before insert',async()=>{
 });
 test('verified user channel GET scoped by user ID',async()=>{
  const m=require.resolve('../mobile-web/api/_lib/db');const orig=require(m),oldD=orig.db,oldS=orig.signedIn;const qs=[];orig.db=()=>({query:async(sql,args)=>{qs.push([sql,args]);return {rows:[]}}});orig.signedIn=async()=>({id:'owner-two'});
- const p=require.resolve('../mobile-web/api/channels.js');delete require.cache[p];try{const r=res();await require(p)(req('GET'),r);assert.equal(r.statusCode,200);assert.deepEqual(qs[0][1],['owner-two']);assert.match(qs[0][0],/user_id=\$1/)}finally{orig.db=oldD;orig.signedIn=oldS;delete require.cache[p]}
+ const p=require.resolve('../mobile-web/api/_lib/routes/channels.js');delete require.cache[p];try{const r=res();await require(p)(req('GET'),r);assert.equal(r.statusCode,200);assert.deepEqual(qs[0][1],['owner-two']);assert.match(qs[0][0],/user_id=\$1/)}finally{orig.db=oldD;orig.signedIn=oldS;delete require.cache[p]}
 });

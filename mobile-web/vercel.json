@@ -1,1 +1,60 @@
-{"version":2,"headers":[{"source":"/(.*)","headers":[{"key":"X-Content-Type-Options","value":"nosniff"},{"key":"Referrer-Policy","value":"no-referrer"},{"key":"X-Frame-Options","value":"DENY"},{"key":"Permissions-Policy","value":"camera=(), microphone=(), geolocation=()"}]}]}
+{
+  "version": 2,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/signup",
+      "destination": "/api/auth?action=signup"
+    },
+    {
+      "source": "/api/resend-verification",
+      "destination": "/api/auth?action=resend-verification"
+    },
+    {
+      "source": "/api/verify-email",
+      "destination": "/api/auth?action=verify-email"
+    },
+    {
+      "source": "/api/totp-setup",
+      "destination": "/api/auth?action=totp-setup"
+    },
+    {
+      "source": "/api/totp-confirm",
+      "destination": "/api/auth?action=totp-confirm"
+    },
+    {
+      "source": "/api/channels",
+      "destination": "/api/telegram?action=channels"
+    },
+    {
+      "source": "/api/telegram-observation",
+      "destination": "/api/telegram?action=telegram-observation"
+    },
+    {
+      "source": "/api/telegram-inbox",
+      "destination": "/api/telegram?action=telegram-inbox"
+    }
+  ]
+}

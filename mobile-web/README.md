@@ -13,6 +13,8 @@ The same Neon Dark dashboard navigation is responsive on desktop and mobile. **P
 - Signed worker MT5 observations `/api/worker-observation`, read-only dashboard `/api/dashboard`
 - Per-user Telegram metadata `/api/channels`, signed event intake `/api/telegram-observation`, user inbox `/api/telegram-inbox`
 
+The eight registration/Telegram paths are rewritten in `vercel.json` to two Node.js gateway functions (`api/auth.js`, `api/telegram.js`), with isolated handlers in `api/_lib/routes/`. This keeps the project under the **12-function Vercel Hobby ceiling** without upgrading to a paid plan.
+
 Everything returns read-only status. `order_send`, public Telegram OTP, private signing keys, live trade actions and customer brokerage passwords are not included. Vercel Functions cannot execute MetaTrader 5 terminals. Workers require separately provisioned Windows machines.
 
 ## Activate only when ready
