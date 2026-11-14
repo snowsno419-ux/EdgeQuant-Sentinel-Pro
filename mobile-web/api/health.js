@@ -1,6 +1,6 @@
 'use strict';
 const {answer}=require('./_lib/core');
-const {db}=require('./_lib/db');const {readyForRegistration}=require('./_lib/onboarding');
+const {db}=require('./_lib/db');const {readyForRegistration,mailPolicy}=require('./_lib/onboarding');
 module.exports=async function(req,res){
   if(req.method!=='GET')return answer(res,405,{error:'method_not_allowed'});
   const configured=!!process.env.DATABASE_URL;
@@ -13,5 +13,5 @@ module.exports=async function(req,res){
       if(ready){const t=await pool.query("SELECT (to_regclass('public.verification_tokens') IS NOT NULL AND to_regclass('public.enrollment_sessions') IS NOT NULL AND to_regclass('public.auth_throttle') IS NOT NULL) AS onboarding, (to_regclass('public.telegram_sources') IS NOT NULL AND to_regclass('public.telegram_listener_keys') IS NOT NULL AND to_regclass('public.telegram_inbox') IS NOT NULL) AS telegram");onboardingReady=t.rows[0]?.onboarding===true;telegramReady=t.rows[0]?.telegram===true;const w=await pool.query("SELECT to_regclass('public.worker_provision_requests') IS NOT NULL AS ready");requestReady=w.rows[0]?.ready===true}
     }catch{ready=false}
   }
-  return answer(res,200,{ok:true,service:'edgequant-cloud-api',version:'integration-0.3',database_configured:configured,database_ready:ready,auth_available:ready,registration_enabled:ready&&onboardingReady&&readyForRegistration(),telegram_inbox_ready:telegramReady,worker_request_ready:requestReady,mt5_worker_connected:false,telegram_connected:false,live_trade_execution:false,mode:'READ_ONLY_STAGE'});
+  return answer(res,200,{ok:true,service:'edgequant-cloud-api',version:'integration-0.3',database_configured:configured,database_ready:ready,auth_available:ready,registration_enabled:ready&&onboardingReady&&readyForRegistration(),registration_test_only:ready&&onboardingReady&&readyForRegistration()&&mailPolicy().testOnly,telegram_inbox_ready:telegramReady,worker_request_ready:requestReady,mt5_worker_connected:false,telegram_connected:false,live_trade_execution:false,mode:'READ_ONLY_STAGE'});
 };
