@@ -1,9 +1,14 @@
-# EdgeQuant Sentinel Pro — Mobile + Web Public UI Demo
+# EdgeQuant Sentinel Pro — PC-inspired Mobile + Web UI
 
-**DEMO ONLY. NO LIVE TRADING.**
+This is a responsive static UI adaptation of the actual EdgeQuant Neon Dark Pro 2.0 Windows desktop menus and dashboard labels, **NOT** a copy of the Windows trading engine. Source reference: `edgequant_desktop.py` from the owner-supplied 2026-11-13 v2.0.4.1 source package and its offline 1366×768 preview.
 
-This folder contains the existing responsive Phase 3 standalone HTML UI preview, adapted for safe publication via GitHub and Vercel. It uses fictional sample balances, broker names, event data, and in-memory UI settings. The public page contains NO real authentication, connected Telegram, MT5 terminals, cloud broker execution, or customer records. Do not enter passwords, real account numbers, Telegram tokens, or worker secrets.
+## Screen coverage
+Dashboard, Channels, Brokers / MT5, Trade Journal, Channel Progress, Manual Trades, Profit Calendar, Trading Plan, Local Profile, Signal Studio, Advanced, Signal Preview, Activity, Settings, Guide and Workspace Setup. Mobile users get a bottom navigation plus accessible full side rail; desktop gets the familiar Neon Dark header, sidebar and controls.
 
-Vercel settings: link this Git repository, select Root Directory `mobile-web`, framework `Other` (static), no build command. Deployment output is this folder's static files. The app supports desktop sidebar and mobile bottom navigation, plus optional home-screen installation from manifest on HTTPS.
+## Safety and current limitations
+This is a **public UI DEMO only**. No broker connection, trade execution, Telegram login, cloud auth, tenant database or payments are connected. Live balances and prices intentionally show em dashes. START is disabled; TEST RUN affects only the browser label. Local controls are *drafts saved in browser localStorage only* and have no effect on live trading. Never enter passwords, OTPs, Telegram session strings, real account IDs or secrets.
 
-The Phase 3.1 development API and Windows read-only MT5 worker remain local-only prototypes and **MUST NOT be copied into this public static deployment**. Production authentication, secure backend, tenancy, worker provisioning, HTTPS transport, audit logs, and real DEMO MT5 testing are separate milestones.
+Production requires secure cloud backend, per-tenant provisioning, Windows MT5 workers, encrypted secret management, audited API actions and DEMO acceptance testing. Existing Windows execution/desktop source is neither embedded in nor published by this folder.
+
+## Deploy
+Vercel Git project `edgequant-mobile-web`, repository `snowsno419-ux/EdgeQuant-Sentinel-Pro`, `main` branch, **rootDirectory** `mobile-web`, framework `Other`/static, no build command. HTTPS domain is `https://edgequant-mobile-web.vercel.app`.
