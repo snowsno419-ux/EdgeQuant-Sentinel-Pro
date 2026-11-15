@@ -55,6 +55,14 @@
     {
       "source": "/api/telegram-inbox",
       "destination": "/api/telegram?action=telegram-inbox"
+    },
+    {
+      "source": "/api/forgot-password",
+      "destination": "/api/auth?action=forgot-password"
+    },
+    {
+      "source": "/api/reset-password",
+      "destination": "/api/auth?action=reset-password"
     }
   ]
 }
