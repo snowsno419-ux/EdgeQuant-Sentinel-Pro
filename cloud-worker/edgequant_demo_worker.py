@@ -65,7 +65,7 @@ def pair(args):
         payload={"login_hint":login,"public_key_pem":pub,"server":server,
             "signature":base64.b64encode(private.sign(proof.encode())).decode(),
             "token":token,"worker_id":worker_id}
-        code,data=request(BASE+"/api/mt5-pair?action=claim",payload)
+        code,data=request(BASE+"/api/mt5-pair-claim",payload)
         if code!=202 or not data.get("claimed"): raise RuntimeError("Worker claim not accepted")
         import hashlib
         print("Claim received. On your phone, CHECK PAIR STATUS and verify fingerprint:")
