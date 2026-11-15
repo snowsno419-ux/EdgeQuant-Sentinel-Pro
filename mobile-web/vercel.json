@@ -99,6 +99,14 @@
     {
       "source": "/api/mt5-pair-approve",
       "destination": "/api/brokers?action=pair-approve"
+    },
+    {
+      "source": "/api/telegram-bot-info",
+      "destination": "/api/telegram?action=bot-info"
+    },
+    {
+      "source": "/api/telegram-bot-setup",
+      "destination": "/api/telegram?action=bot-setup"
     }
   ]
 }
