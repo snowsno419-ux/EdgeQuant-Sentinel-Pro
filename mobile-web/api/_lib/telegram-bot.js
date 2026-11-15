@@ -38,4 +38,15 @@ async function groupAdminProof(event,env=process.env){
   return j.ok===true&&['creator','administrator'].includes(j.result?.status);
  }catch{return false}finally{clearTimeout(id)}
 }
-module.exports={botReady,checkWebhookSecret,chatId,parseUpdate,groupAdminProof};
+async function respondChatId(event,env=process.env){
+ if(!botReady(env))return false;
+ const ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),4000);
+ try{
+  const r=await fetch('https://api.telegram.org/bot'+env.EQ_TELEGRAM_BOT_TOKEN+'/sendMessage',{
+   method:'POST',signal:ctrl.signal,headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({chat_id:event.chat_id,text:'EdgeQuant Chat ID: '+event.chat_id+'\nRegister this ID in your verified EdgeQuant app. No trading is enabled.'})
+  });
+  return r.ok;
+ }catch{return false}finally{clearTimeout(timeout)}
+}
+module.exports={botReady,checkWebhookSecret,chatId,parseUpdate,groupAdminProof,respondChatId};
