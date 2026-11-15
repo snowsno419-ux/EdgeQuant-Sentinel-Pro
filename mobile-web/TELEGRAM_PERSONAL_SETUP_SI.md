@@ -38,3 +38,7 @@ MT5 requires its own independent Windows terminal/worker for each isolated clien
 ## Current migration
 
 Apply `0009_telegram_personal.sql` additively after prior cloud database migrations. Do not enable Telegram phone/OTP input forms until a properly deployed, encrypted private worker can receive and process those challenges without storing OTPs in logs, caches or the shared database.
+
+## Current next phase — Private host worker source
+
+A staged encrypted Telethon listener source is now available at `cloud-worker/telegram_personal_worker.py` with runbook `cloud-worker/TELEGRAM_PRIVATE_LISTENER_GUIDE.md`. It supports a **private-host developer-owned account test** (terminal login, encrypted local session, signed source list and filtered new/edited messages). No new cloud host has been provisioned, no user Telegram login is connected, and browser phone OTP remains disabled. A secure mobile self-service challenge transport is needed before ordinary customer use.

@@ -4,7 +4,7 @@ const {answer,canonical}=require('../core');
 const {db}=require('../db');
 const {createPublicKey,verify}=require('node:crypto');
 const ID=/^[A-Za-z0-9_-]{12,80}$/;
-const CHAT=/^(-100)?[0-9]{5,20}$/;
+const CHAT=/^-?[0-9]{5,20}$/;
 function validBody(b){
  if(!b||typeof b!=='object'||Array.isArray(b)||Object.keys(b).sort().join(',')!=='dialogs,event_id,timestamp_ms,worker_id')return false;
  if(!ID.test(b.worker_id)||!ID.test(b.event_id)||!Number.isSafeInteger(b.timestamp_ms)||Math.abs(Date.now()-b.timestamp_ms)>90000||!Array.isArray(b.dialogs)||b.dialogs.length>100)return false;
@@ -39,8 +39,9 @@ module.exports=async(req,res)=>{
    await cx.query("INSERT INTO telegram_personal_dialogs(user_id,chat_id,label,dialog_type,enabled,last_discovered_at) VALUES($1,$2,$3,$4,FALSE,NOW()) ON CONFLICT(user_id,chat_id) DO UPDATE SET label=EXCLUDED.label,dialog_type=EXCLUDED.dialog_type,last_discovered_at=NOW()",[worker.user_id,d.chat_id,d.label.trim(),d.dialog_type]);
   }
   await cx.query("UPDATE telegram_listener_requests SET state='CONNECTED',last_seen_at=NOW(),updated_at=NOW() WHERE user_id=$1",[worker.user_id]);
+  const selected=await cx.query("SELECT chat_id FROM telegram_personal_dialogs WHERE user_id=$1 AND enabled=TRUE AND last_discovered_at>NOW()-INTERVAL '10 minutes' LIMIT 200",[worker.user_id]);
   await cx.query('COMMIT');
-  return answer(res,202,{synced:b.dialogs.length,read_only:true,live_trade_execution:false});
+  return answer(res,202,{synced:b.dialogs.length,enabled_chat_ids:selected.rows.map(x=>x.chat_id),read_only:true,live_trade_execution:false});
  }catch{
   if(cx)await cx.query('ROLLBACK').catch(()=>{});
   return answer(res,503,{error:'personal_sync_unavailable'});

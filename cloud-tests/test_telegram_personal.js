@@ -13,6 +13,7 @@ function payload(){
 test('personal cloud sync checks exact schema, clock skew and no credentials',()=>{
  const b=payload();
  assert.equal(v.validBody(b),true);
+ assert.equal(v.validBody({...b,dialogs:[{chat_id:'-12345678',dialog_type:'group',label:'Small Basic Group'}]}),true);
  assert.equal(v.validBody({...b,phone:'+12345'}),false);
  assert.equal(v.validBody({...b,otp:'123456'}),false);
  assert.equal(v.validBody({...b,dialogs:[...b.dialogs,b.dialogs[0]]}),false);

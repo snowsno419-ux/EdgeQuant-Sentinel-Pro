@@ -36,3 +36,5 @@ Email provider setup requires user authentication and domain ownership verificat
 This does not deploy any database, buy hosting, connect Telegram, run an MT5 terminal, or enable live trades.
 
 **Personal Telegram API:** `/api/telegram-personal-dialogs`, `/api/telegram-personal-sync`, `/api/telegram-personal-disconnect` reuse the existing Telegram gateway. Listener registration requires an authorized operator to provision a per-user Ed25519 public key; a request alone never means Telegram is logged in.
+
+10. `0010_telegram_basic_group_ids.sql` (extends signed personal dialog source IDs for negative Telegram basic groups; additive)
