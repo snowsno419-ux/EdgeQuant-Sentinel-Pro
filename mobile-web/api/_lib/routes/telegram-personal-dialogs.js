@@ -3,7 +3,7 @@
 const {answer}=require('../core');
 const {db,signedIn}=require('../db');
 const {sameOrigin}=require('../registry');
-const ID=/^(-100)?[0-9]{5,20}$/;
+const ID=/^-?[0-9]{5,20}$/;
 module.exports=async(req,res)=>{
  if(!['GET','POST'].includes(req.method))return answer(res,405,{error:'method_not_allowed'});
  if(req.method==='POST'&&!sameOrigin(req))return answer(res,403,{error:'invalid_origin'});
