@@ -1,0 +1,12 @@
+/* Isolated recovery flow: no third-party assets or UI dependencies. */
+:root{color-scheme:dark;--bg:#050914;--panel:#101d32;--line:#27445b;--cyan:#02d7fa;--text:#ebf3ff;--muted:#a4b8d0}
+*{box-sizing:border-box}
+body{margin:0;padding:24px 15px;min-height:100dvh;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,"Segoe UI",sans-serif}
+main{width:min(100%,510px);margin:8vh auto;background:var(--panel);padding:clamp(20px,5vw,32px);border:1px solid var(--line);border-radius:18px}
+h1{font-size:clamp(25px,5vw,32px);line-height:1.15;margin:4px 0 15px}p{color:var(--muted)}
+label{display:block;font-weight:600;margin-top:18px}input{display:block;width:100%;margin-top:7px;border:1px solid #375a73;background:#061323;color:white;padding:13px;border-radius:8px;font:inherit}
+button{display:block;margin-top:22px;background:#057d94;border:1px solid #1994ac;border-radius:8px;color:white;font:inherit;font-weight:700;padding:13px 20px;width:100%;cursor:pointer}
+button:disabled{opacity:.6;cursor:progress}
+a{color:#57dbe8}button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+#status{min-height:28px;white-space:normal;overflow-wrap:anywhere}
+.note{font-size:13px}footer{margin-top:23px;font-size:14px}
