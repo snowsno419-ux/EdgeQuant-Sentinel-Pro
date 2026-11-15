@@ -220,15 +220,16 @@ function connectionSetup(){
  const sources=Array.isArray(cloud.channels)?cloud.channels:[];
  const accounts=cloudAccounts();
  const active=accounts.filter(b=>b.status==='CONNECTED').length;
- const now=Date.now();
- const receiving=sources.some(c=>c.enabled===true&&c.verified===true&&c.last_observed_at&&now-new Date(c.last_observed_at).getTime()<600000);
- const ready=sources.some(c=>c.enabled===true&&c.verified===true)&&cloud.telegramBotReady;
+ const personal=cloud.telegramPersonal?.connection;
+ const online=personal?.worker_online===true;
+ const personalSourceCount=cloud.telegramPersonal?.dialogs?.length||0;
+ const botReceiving=sources.some(c=>c.enabled===true&&c.verified===true&&c.last_observed_at&&Date.now()-new Date(c.last_observed_at).getTime()<600000);
  return `<section class="connection-setup" aria-label="Cloud connection setup">
  <div class="connection-heading"><div><span class="small-caps">SIGNED IN · ${esc(cloud.user?.role||'account').toUpperCase()}</span><h2>Welcome to EdgeQuant</h2><p>${esc(cloud.user?.email||'Verified account')} · Configure authorized connections for this account.</p></div><span class="status-pill">TRADING OFF</span></div>
  <div class="connection-cards">
- <div class="connection-card"><div class="connection-card-top"><span class="connection-emoji">✈</span><span class="connection-status ${receiving?'linked':'pending'}">${receiving?'MESSAGES RECEIVING':ready?'WAITING FOR MESSAGES':'NOT CONNECTED'}</span></div>
- <h3>Telegram</h3><p>${sources.length} registered source${sources.length===1?'':'s'}. ${cloud.telegramBotReady?'Bot webhook configured; authorization and incoming messages still need verification.':'Bot webhook not configured. Telegram account OTP mode needs a separate listener.'}</p>
- ${btn('SET UP TELEGRAM','nav:channels','btn-primary')}<small>Bot mode reads only authorized chats that added the bot. Signal execution OFF.</small></div>
+ <div class="connection-card"><div class="connection-card-top"><span class="connection-emoji">✈</span><span class="connection-status ${online||botReceiving?'linked':'pending'}">${online?'PERSONAL LISTENER ONLINE':botReceiving?'BOT MESSAGES RECEIVING':'NOT CONNECTED'}</span></div>
+ <h3>Personal Telegram</h3><p>${personalSourceCount} account channels discovered. ${online?'Private listener is online.':'Connect each client Telegram account via an isolated cloud listener. Provisioning is pending.'} Bot mode remains optional.</p>
+ ${btn('SET UP TELEGRAM','nav:channels','btn-primary')}<small>Personal Telegram is the primary workflow. The cloud account listener must be hosted separately. Trading OFF.</small></div>
  <div class="connection-card"><div class="connection-card-top"><span class="connection-emoji">▣</span><span class="connection-status ${active?'linked':'pending'}">${active?active+' DEMO CONNECTED':'NOT CONNECTED'}</span></div>
  <h3>MetaTrader 5</h3><p>${accounts.length} DEMO broker${accounts.length===1?'':'s'} registered. A signed Windows cloud worker is required; this phone does not run MT5 itself.</p>
  ${btn('SET UP MT5','nav:brokers','btn-primary')}<small>Read-only worker pairing; no MT5 passwords or order execution.</small></div>
