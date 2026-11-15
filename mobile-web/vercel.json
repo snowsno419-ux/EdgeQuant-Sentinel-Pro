@@ -107,6 +107,18 @@
     {
       "source": "/api/telegram-bot-setup",
       "destination": "/api/telegram?action=bot-setup"
+    },
+    {
+      "source": "/api/telegram-personal-dialogs",
+      "destination": "/api/telegram?action=personal-dialogs"
+    },
+    {
+      "source": "/api/telegram-personal-sync",
+      "destination": "/api/telegram?action=personal-sync"
+    },
+    {
+      "source": "/api/telegram-personal-disconnect",
+      "destination": "/api/telegram?action=personal-disconnect"
     }
   ]
 }
