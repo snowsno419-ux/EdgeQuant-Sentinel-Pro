@@ -61,3 +61,13 @@ body.auth-gated{padding-bottom:0}
 .connection-list{display:grid;gap:7px;margin-top:9px}
 .connection-source{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px}
 @media(max-width:700px){.auth-gated .masthead{padding:26px 14px 12px}.auth-gated .brand-name{font-size:22px}.auth-gated .brand-logo{width:54px;height:54px}.auth-gated .work-area{padding:0 10px 28px}.auth-gated .page-heading{padding:6px}.auth-gated .main-content{padding:0}.auth-gated .surface{margin-bottom:12px}.connection-cards{grid-template-columns:1fr}.connection-setup{padding:12px}.connection-heading h2{font-size:19px}.connection-source{align-items:flex-start;flex-direction:column}.connection-status{max-width:100%}}
+
+/* Cloud connection credentials are one-time, shown only to the authenticated browser user. */
+.pair-token{background:#0b2432;border:1px solid #286277;border-radius:8px;padding:13px;margin:12px 0;max-width:100%;overflow:hidden}
+.pair-token b{display:block;margin-bottom:7px;color:var(--cyan)}
+.pair-token input{display:block;width:100%;max-width:100%;font-family:Consolas,monospace;font-size:12px;min-height:42px;letter-spacing:.03em;overflow-x:auto}
+.pair-token p{margin:8px 0 0}
+.broker-connection{min-width:0;width:100%}
+.broker-connection .option-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.connection-source{min-width:0;overflow-wrap:anywhere}
+@media(max-width:700px){.broker-connection .btn{flex:1 1 100%}.pair-token input{font-size:11px}}
