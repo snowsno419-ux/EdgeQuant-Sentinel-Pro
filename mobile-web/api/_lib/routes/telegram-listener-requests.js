@@ -15,13 +15,11 @@ module.exports=async function(req,res){
   const user=await signedIn(req);
   if(!user)return answer(res,401,{error:'sign_in_required'});
   if(req.method==='GET'){
-   const q=await pool.query('SELECT id,state,created_at,updated_at FROM telegram_listener_requests WHERE user_id=$1',[user.id]);
+   const q=await pool.query('SELECT id,state,mode,last_seen_at,created_at,updated_at FROM telegram_listener_requests WHERE user_id=$1',[user.id]);
    return answer(res,200,{request:q.rows[0]||null,telegram_connected:false,live_trade_execution:false});
   }
   if(!await throttle(pool,'telegram-listener-request:'+user.id,8,3600))return answer(res,429,{error:'too_many_requests'});
-  const c=await pool.query('SELECT COUNT(*)::int AS n FROM telegram_sources WHERE user_id=$1',[user.id]);
-  if(c.rows[0].n===0)return answer(res,409,{error:'register_a_source_first'});
-  const q=await pool.query("INSERT INTO telegram_listener_requests(user_id,state) VALUES($1,'PENDING') ON CONFLICT(user_id) DO UPDATE SET updated_at=NOW() RETURNING id,state,created_at,updated_at",[user.id]);
-  return answer(res,202,{request:q.rows[0],note:'Operator authorization and a separate Telegram listener are required. This request does not sign in to Telegram.',telegram_connected:false,live_trade_execution:false});
+  const q=await pool.query("INSERT INTO telegram_listener_requests(user_id,state,mode) VALUES($1,'PENDING','personal') ON CONFLICT(user_id) DO UPDATE SET updated_at=NOW(),mode='personal',state=CASE WHEN telegram_listener_requests.state IN ('CANCELLED','FAILED') THEN 'PENDING' ELSE telegram_listener_requests.state END,last_seen_at=CASE WHEN telegram_listener_requests.state IN ('CANCELLED','FAILED') THEN NULL ELSE telegram_listener_requests.last_seen_at END RETURNING id,state,mode,last_seen_at,created_at,updated_at",[user.id]);
+  return answer(res,202,{request:q.rows[0],note:'Personal Telegram listener requested. Approval and an encrypted per-user cloud listener are still required. No phone number, OTP or Telegram password was collected.',telegram_connected:false,live_trade_execution:false});
  }catch{return answer(res,503,{error:'telegram_listener_request_unavailable'})}
 };
