@@ -34,7 +34,7 @@ function realBrokerSummary(){
  if(!bs.length)return empty(cloud.database?'No DEMO broker registered. Add one below first.':'Cloud database unavailable.');
  return '<div class="activity-list">'+bs.map(b=>{
   const p=pairStatus[b.id]?.pairing;
-  const token=lastPairing?.broker_id===b.id?lastPairing.token:null;
+  const token=lastPairing?.broker_id===b.id&&lastPairing.expires_at>Date.now()?lastPairing.token:null;
   const actionButtons='<div class="option-list">'+
    (cloud.workerRequestsReady&&b.status!=='CONNECTED'?btn('REQUEST MANAGED CLOUD WORKER','cloud-worker-request:'+b.id,'btn-muted'):'')+
    (cloud.mt5PairingReady?btn('GENERATE PAIRING TOKEN','cloud-pair-start:'+b.id,'btn-primary')+btn('CHECK PAIR STATUS','cloud-pair-status:'+b.id,'btn-muted'):'')+
@@ -46,10 +46,11 @@ function realBrokerSummary(){
   return '<div class="activity-item"><div class="activity-dot">●</div><div class="broker-connection"><b>'+esc(b.label)+'</b> <span class="connection-status '+(b.status==='CONNECTED'?'linked':'pending')+'">'+esc(b.status)+'</span><div class="text-note">'+esc(b.broker)+' · '+esc(b.server)+' · account '+esc(b.login_hint)+' · Balance '+cloudVal(b.balance,true)+' · Equity '+cloudVal(b.equity,true)+'</div><small class="muted mono">'+(b.observed_at?esc(slt(new Date(b.observed_at))):'No signed telemetry')+'</small>'+pairingInfo+actionButtons+tokenBox+'</div></div>';
  }).join('')+'</div>';
 }
-async function checkCloud(){let changed=false;const firstCheck=!cloud.authChecked;try{const r=await fetch('/api/health',{cache:'no-store',credentials:'same-origin',headers:{Accept:'application/json'}});if(!r.ok)throw Error('Cloud API unavailable');const j=await r.json();const previous=cloud.reachable+':'+cloud.database+':'+cloud.authenticated+':'+(cloud.snapshot?.brokers?.map(x=>[x.id,x.status,x.observed_at].join('-')).join(',')||'')+':'+(cloud.telegramRequest?.state||'')+':'+(cloud.channels?.map(c=>[c.chat_id,c.verified,c.enabled,c.last_observed_at].join('-')).join(',')||'');cloud.reachable=j.ok===true;cloud.database=j.database_ready===true;cloud.registration=j.registration_enabled===true;cloud.telegramInboxReady=j.telegram_inbox_ready===true;cloud.workerRequestsReady=j.worker_request_ready===true;cloud.telegramRequestReady=j.telegram_listener_request_ready===true;cloud.telegramBotReady=j.telegram_bot_configured===true;cloud.mt5PairingReady=j.mt5_pairing_available===true;cloud.telegramConnected=j.telegram_connected===true;cloud.mt5WorkerConnected=j.mt5_worker_connected===true;cloud.authenticated=false;cloud.user=null;cloud.snapshot=null;cloud.telegramRequest=null;cloud.channels=[];cloud.inbox=[];cloud.lastError=null;
+async function checkCloud(){let changed=false;const firstCheck=!cloud.authChecked;const previousAccountId=cloud.user?.id||null;try{const r=await fetch('/api/health',{cache:'no-store',credentials:'same-origin',headers:{Accept:'application/json'}});if(!r.ok)throw Error('Cloud API unavailable');const j=await r.json();const previous=cloud.reachable+':'+cloud.database+':'+cloud.authenticated+':'+(cloud.snapshot?.brokers?.map(x=>[x.id,x.status,x.observed_at].join('-')).join(',')||'')+':'+(cloud.telegramRequest?.state||'')+':'+(cloud.channels?.map(c=>[c.chat_id,c.verified,c.enabled,c.last_observed_at].join('-')).join(',')||'');cloud.reachable=j.ok===true;cloud.database=j.database_ready===true;cloud.registration=j.registration_enabled===true;cloud.telegramInboxReady=j.telegram_inbox_ready===true;cloud.workerRequestsReady=j.worker_request_ready===true;cloud.telegramRequestReady=j.telegram_listener_request_ready===true;cloud.telegramBotReady=j.telegram_bot_configured===true;cloud.mt5PairingReady=j.mt5_pairing_available===true;cloud.telegramConnected=j.telegram_connected===true;cloud.mt5WorkerConnected=j.mt5_worker_connected===true;cloud.authenticated=false;cloud.user=null;cloud.snapshot=null;cloud.telegramRequest=null;cloud.channels=[];cloud.inbox=[];cloud.lastError=null;
 if(cloud.database){const u=await fetch('/api/me',{credentials:'same-origin',cache:'no-store'});if(u.ok){cloud.user=await u.json();cloud.authenticated=true; if(['receiver','provider'].includes(cloud.user?.role))prefs.role=cloud.user.role;if(cloud.telegramInboxReady){const [c,i]=await Promise.all([fetch('/api/channels',{credentials:'same-origin',cache:'no-store'}),fetch('/api/telegram-inbox',{credentials:'same-origin',cache:'no-store'})]);cloud.channels=c.ok?(await c.json()).channels:[];cloud.inbox=i.ok?(await i.json()).messages:[]}if(cloud.telegramRequestReady){try{const tr=await fetch('/api/telegram-listener-requests',{credentials:'same-origin',cache:'no-store'});cloud.telegramRequest=tr.ok?(await tr.json()).request:null}catch{cloud.telegramRequest=null}}const d=await fetch('/api/dashboard',{credentials:'same-origin',cache:'no-store'});if(d.ok)cloud.snapshot=await d.json()}}
 const now=cloud.reachable+':'+cloud.database+':'+cloud.authenticated+':'+(cloud.snapshot?.brokers?.map(x=>[x.id,x.status,x.observed_at].join('-')).join(',')||'')+':'+(cloud.telegramRequest?.state||'')+':'+(cloud.channels?.map(c=>[c.chat_id,c.verified,c.enabled,c.last_observed_at].join('-')).join(',')||'');changed=previous!==now;
 }catch(e){changed=cloud.reachable||cloud.authenticated;cloud.reachable=false;cloud.database=false;cloud.registration=false;cloud.authenticated=false;cloud.user=null;cloud.snapshot=null;cloud.telegramRequest=null;cloud.lastError=String(e).slice(0,100)}
+if(!cloud.authenticated||(previousAccountId&&previousAccountId!==cloud.user?.id)){lastPairing=null;lastProof=null;pairStatus={};cloud.telegramBotInfo=null}if(lastProof&&cloud.channels.some(c=>c.chat_id===lastProof.chat_id&&c.verified))lastProof=null;
 cloud.authChecked=true;if(firstCheck)changed=true;if(!cloud.authenticated){page='profile';}else if(page==='profile'&&firstCheck){page='dashboard';}
 const el=$('#api-health');if(el){el.textContent=!cloud.reachable?'UNAVAILABLE':!cloud.database?'API ONLINE · DB OFF':!cloud.authenticated?'LOGIN REQUIRED':'READ-ONLY ONLINE';el.className=cloud.reachable?'mint':'amber'}
 if(changed)render();}
@@ -105,7 +106,7 @@ async function cloudChannelChallenge(chatId){
  try{
   const r=await fetch('/api/channel-challenge',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId})});
   const j=await r.json();if(!r.ok)throw Error(j.error||'Channel verification unavailable');
-  lastProof={chat_id:chatId,code:j.proof_code};
+  lastProof={chat_id:chatId,code:j.proof_code,expires_at:Date.now()+900000};
   render();message('Post this one-time code in the Telegram chat as an admin within 15 minutes.');
  }catch(e){message('Telegram verification: '+String(e.message).slice(0,85))}
 }
@@ -123,7 +124,7 @@ async function cloudPairStart(brokerId){
  try{
   const r=await fetch('/api/mt5-pair-start',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({broker_id:brokerId})});
   const j=await r.json();if(!r.ok)throw Error(j.error||'Pair code unavailable');
-  lastPairing={broker_id:brokerId,token:j.pairing_token};delete pairStatus[brokerId];
+  lastPairing={broker_id:brokerId,token:j.pairing_token,expires_at:Date.now()+900000};delete pairStatus[brokerId];
   render();message('Private 15-minute pairing token generated. Enter it on your authorized Windows cloud worker.');
  }catch(e){message('MT5 pairing: '+String(e.message).slice(0,85))}
 }
@@ -226,7 +227,7 @@ function cloudTelegram(){
    <div class="text-note">Chat ID ${esc(c.chat_id)} · ${esc(c.kind)} · Last received: ${c.last_observed_at?esc(slt(new Date(c.last_observed_at))):'never'}</div>
    <div class="option-list">${actions}</div></div></div>`;
  }).join('');
- const proof=lastProof?`<div class="pair-token"><b>One-time verification message for Chat ${esc(lastProof.chat_id)}</b>
+ const proof=lastProof&&lastProof.expires_at>Date.now()?`<div class="pair-token"><b>One-time verification message for Chat ${esc(lastProof.chat_id)}</b>
  <input aria-label="One-time chat proof" readonly value="${esc(lastProof.code)}" onclick="this.select()">
  <p class="text-note">Post this exact message as a Telegram channel/group administrator within 15 minutes. Then tap REFRESH. Do not send the code to strangers.</p></div>`:'';
  return surface('TELEGRAM · CLOUD CONNECTION',`
