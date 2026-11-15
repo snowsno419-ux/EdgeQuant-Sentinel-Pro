@@ -111,7 +111,7 @@ async function cloudToggleChannel(chatId,enabled){
 async function cloudPairStart(brokerId){
  if(!cloud.authenticated||!cloud.mt5PairingReady)return message('MT5 worker pairing is not configured.');
  try{
-  const r=await fetch('/api/mt5-pair?action=start',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({broker_id:brokerId})});
+  const r=await fetch('/api/mt5-pair-start',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({broker_id:brokerId})});
   const j=await r.json();if(!r.ok)throw Error(j.error||'Pair code unavailable');
   lastPairing={broker_id:brokerId,token:j.pairing_token};delete pairStatus[brokerId];
   render();message('Private 15-minute pairing token generated. Enter it on your authorized Windows cloud worker.');
@@ -120,7 +120,7 @@ async function cloudPairStart(brokerId){
 async function cloudPairStatus(brokerId){
  if(!cloud.authenticated)return;
  try{
-  const r=await fetch('/api/mt5-pair?action=status&broker_id='+encodeURIComponent(brokerId),{credentials:'same-origin',cache:'no-store'});
+  const r=await fetch('/api/mt5-pair-status?broker_id='+encodeURIComponent(brokerId),{credentials:'same-origin',cache:'no-store'});
   const j=await r.json();if(!r.ok)throw Error(j.error||'Pairing status unavailable');
   pairStatus[brokerId]=j;render();
   message(j.worker_registered?'Read-only worker key is registered. Signed MT5 telemetry is required for CONNECTED status.':j.pairing?.state==='CLAIMED'?'Worker claim received. Verify fingerprint before approval.':'Pairing status refreshed.');
@@ -131,7 +131,7 @@ async function cloudPairApprove(brokerId){
  if(!p||p.state!=='CLAIMED'||!p.fingerprint)return message('Check pending worker claim first.');
  if(!confirm('Approve this read-only MT5 worker only after matching its fingerprint with the private Windows worker?'))return;
  try{
-  const r=await fetch('/api/mt5-pair?action=approve',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({broker_id:brokerId})});
+  const r=await fetch('/api/mt5-pair-approve',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({broker_id:brokerId})});
   const j=await r.json();if(!r.ok)throw Error(j.error||'Approval unavailable');
   lastPairing=null;await cloudPairStatus(brokerId);
   message('Worker public key approved. Account remains OFFLINE until real signed DEMO telemetry arrives. Trading OFF.');
