@@ -116,7 +116,7 @@ async function cloudPairApprove(brokerId){
  try{
   const r=await fetch('/api/mt5-pair?action=approve',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({broker_id:brokerId})});
   const j=await r.json();if(!r.ok)throw Error(j.error||'Approval unavailable');
-  delete lastPairing;await cloudPairStatus(brokerId);
+  lastPairing=null;await cloudPairStatus(brokerId);
   message('Worker public key approved. Account remains OFFLINE until real signed DEMO telemetry arrives. Trading OFF.');
  }catch(e){message('MT5 approval: '+String(e.message).slice(0,80))}
 }
