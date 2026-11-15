@@ -19,7 +19,7 @@ module.exports=async function(req,res){
    return answer(res,200,{request:q.rows[0]||null,telegram_connected:false,live_trade_execution:false});
   }
   if(!await throttle(pool,'telegram-listener-request:'+user.id,8,3600))return answer(res,429,{error:'too_many_requests'});
-  const q=await pool.query("INSERT INTO telegram_listener_requests(user_id,state,mode) VALUES($1,'PENDING','personal') ON CONFLICT(user_id) DO UPDATE SET updated_at=NOW(),mode='personal' RETURNING id,state,mode,last_seen_at,created_at,updated_at",[user.id]);
+  const q=await pool.query("INSERT INTO telegram_listener_requests(user_id,state,mode) VALUES($1,'PENDING','personal') ON CONFLICT(user_id) DO UPDATE SET updated_at=NOW(),mode='personal',state=CASE WHEN telegram_listener_requests.state IN ('CANCELLED','FAILED') THEN 'PENDING' ELSE telegram_listener_requests.state END,last_seen_at=CASE WHEN telegram_listener_requests.state IN ('CANCELLED','FAILED') THEN NULL ELSE telegram_listener_requests.last_seen_at END RETURNING id,state,mode,last_seen_at,created_at,updated_at",[user.id]);
   return answer(res,202,{request:q.rows[0],note:'Personal Telegram listener requested. Approval and an encrypted per-user cloud listener are still required. No phone number, OTP or Telegram password was collected.',telegram_connected:false,live_trade_execution:false});
  }catch{return answer(res,503,{error:'telegram_listener_request_unavailable'})}
 };
