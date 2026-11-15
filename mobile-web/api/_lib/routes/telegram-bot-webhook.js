@@ -1,6 +1,6 @@
 'use strict';
 const {answer,sha}=require('../core'),{db}=require('../db');
-const {checkWebhookSecret,parseUpdate,groupAdminProof}=require('../telegram-bot');
+const {checkWebhookSecret,parseUpdate,groupAdminProof,respondChatId}=require('../telegram-bot');
 module.exports=async(req,res)=>{
  if(req.method!=='POST')return answer(res,405,{error:'method_not_allowed'});
  if(!checkWebhookSecret(req.headers['x-telegram-bot-api-secret-token']))return answer(res,401,{error:'unauthorized'});
@@ -15,6 +15,10 @@ module.exports=async(req,res)=>{
   const u=await cx.query('INSERT INTO telegram_bot_updates(update_id) VALUES($1) ON CONFLICT DO NOTHING RETURNING update_id',[event.update_id]);
   if(!u.rowCount){await cx.query('COMMIT');return answer(res,200,{ok:true,duplicate:true})}
   if(event.kind==='ignored'){await cx.query('COMMIT');return answer(res,200,{ok:true,ignored:true})}
+  if(/^\/eqid(?:@[a-zA-Z0-9_]+)?$/i.test(event.text.trim())){
+   if(await groupAdminProof(event))await respondChatId(event);
+   await cx.query('COMMIT');return answer(res,200,{ok:true,admin_command:true});
+  }
   const proof=event.text.trim().match(/^EQVERIFY-[A-F0-9]{32}$/);
   if(proof){
    // Only channel posts or verified group admins may prove authorization.
