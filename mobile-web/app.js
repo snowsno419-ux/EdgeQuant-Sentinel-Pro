@@ -28,7 +28,24 @@ function metric(label,value,accent='cyan',extra=''){let col={cyan:'var(--cyan)',
 function cloudAccounts(){return Array.isArray(cloud.snapshot?.brokers)?cloud.snapshot.brokers:[]}
 function currentBroker(){return cloudAccounts().find(x=>x.status==='CONNECTED')||null}
 function cloudVal(value,asMoney=false){if(value===null||value===undefined||!Number.isFinite(Number(value)))return '—';return asMoney?Number(value).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):String(value)}
-function realBrokerSummary(){const bs=cloudAccounts();if(!bs.length)return empty(cloud.database?'No cloud broker registered for this verified user.':'Cloud database / worker not configured.');return '<div class="activity-list">'+bs.map(b=>`<div class="activity-item"><div class="activity-dot">●</div><div><b>${esc(b.label)}</b> <span class="text-note">${esc(b.status)}</span><div class="text-note">${esc(b.broker)} · ${esc(b.server)} · account ${esc(b.login_hint)} · Balance ${cloudVal(b.balance,true)} · Equity ${cloudVal(b.equity,true)}</div><small class="muted mono">${b.observed_at?esc(slt(new Date(b.observed_at))):'No observation'}</small>${cloud.workerRequestsReady&&b.status!=='CONNECTED'?btn('REQUEST DEMO CLOUD WORKER','cloud-worker-request:'+b.id,'btn-muted'):''}</div></div>`).join('')+'</div>'}
+
+function realBrokerSummary(){
+ const bs=cloudAccounts();
+ if(!bs.length)return empty(cloud.database?'No DEMO broker registered. Add one below first.':'Cloud database unavailable.');
+ return '<div class="activity-list">'+bs.map(b=>{
+  const p=pairStatus[b.id]?.pairing;
+  const token=lastPairing?.broker_id===b.id?lastPairing.token:null;
+  const actionButtons='<div class="option-list">'+
+   (cloud.workerRequestsReady&&b.status!=='CONNECTED'?btn('REQUEST MANAGED CLOUD WORKER','cloud-worker-request:'+b.id,'btn-muted'):'')+
+   (cloud.mt5PairingReady?btn('GENERATE PAIRING TOKEN','cloud-pair-start:'+b.id,'btn-primary')+btn('CHECK PAIR STATUS','cloud-pair-status:'+b.id,'btn-muted'):'')+
+   (p?.state==='CLAIMED'?btn('APPROVE READ-ONLY WORKER','cloud-pair-approve:'+b.id,'btn-muted'):'')+
+   '</div>';
+  const pairingInfo=p?'<p class="text-note">Pair: '+esc(p.state)+' • Worker '+esc(p.worker_id||'—')+
+   (p.fingerprint?' • Public key fingerprint: <b class="mono">'+esc(p.fingerprint)+'</b>':'')+'</p>':'';
+  const tokenBox=token?'<div class="pair-token"><b>Private one-time worker pairing token (15 minutes)</b><input aria-label="Pairing token" readonly value="'+esc(token)+'" onclick="this.select()"><p class="text-note">Copy only to your authorized Windows cloud worker. Never send the code in chat or screenshots. Broker ID: <span class="mono">'+esc(b.id)+'</span></p></div>':'';
+  return '<div class="activity-item"><div class="activity-dot">●</div><div class="broker-connection"><b>'+esc(b.label)+'</b> <span class="connection-status '+(b.status==='CONNECTED'?'linked':'pending')+'">'+esc(b.status)+'</span><div class="text-note">'+esc(b.broker)+' · '+esc(b.server)+' · account '+esc(b.login_hint)+' · Balance '+cloudVal(b.balance,true)+' · Equity '+cloudVal(b.equity,true)+'</div><small class="muted mono">'+(b.observed_at?esc(slt(new Date(b.observed_at))):'No signed telemetry')+'</small>'+pairingInfo+actionButtons+tokenBox+'</div></div>';
+ }).join('')+'</div>';
+}
 async function checkCloud(){let changed=false;const firstCheck=!cloud.authChecked;try{const r=await fetch('/api/health',{cache:'no-store',credentials:'same-origin',headers:{Accept:'application/json'}});if(!r.ok)throw Error('Cloud API unavailable');const j=await r.json();const previous=cloud.reachable+':'+cloud.database+':'+cloud.authenticated+':'+(cloud.snapshot?.brokers?.map(x=>[x.id,x.status,x.observed_at].join('-')).join(',')||'')+':'+(cloud.telegramRequest?.state||'')+':'+(cloud.channels?.map(c=>[c.chat_id,c.verified,c.enabled,c.last_observed_at].join('-')).join(',')||'');cloud.reachable=j.ok===true;cloud.database=j.database_ready===true;cloud.registration=j.registration_enabled===true;cloud.telegramInboxReady=j.telegram_inbox_ready===true;cloud.workerRequestsReady=j.worker_request_ready===true;cloud.telegramRequestReady=j.telegram_listener_request_ready===true;cloud.telegramBotReady=j.telegram_bot_configured===true;cloud.mt5PairingReady=j.mt5_pairing_available===true;cloud.telegramConnected=j.telegram_connected===true;cloud.mt5WorkerConnected=j.mt5_worker_connected===true;cloud.authenticated=false;cloud.user=null;cloud.snapshot=null;cloud.telegramRequest=null;cloud.channels=[];cloud.inbox=[];cloud.lastError=null;
 if(cloud.database){const u=await fetch('/api/me',{credentials:'same-origin',cache:'no-store'});if(u.ok){cloud.user=await u.json();cloud.authenticated=true; if(['receiver','provider'].includes(cloud.user?.role))prefs.role=cloud.user.role;if(cloud.telegramInboxReady){const [c,i]=await Promise.all([fetch('/api/channels',{credentials:'same-origin',cache:'no-store'}),fetch('/api/telegram-inbox',{credentials:'same-origin',cache:'no-store'})]);cloud.channels=c.ok?(await c.json()).channels:[];cloud.inbox=i.ok?(await i.json()).messages:[]}if(cloud.telegramRequestReady){try{const tr=await fetch('/api/telegram-listener-requests',{credentials:'same-origin',cache:'no-store'});cloud.telegramRequest=tr.ok?(await tr.json()).request:null}catch{cloud.telegramRequest=null}}const d=await fetch('/api/dashboard',{credentials:'same-origin',cache:'no-store'});if(d.ok)cloud.snapshot=await d.json()}}
 const now=cloud.reachable+':'+cloud.database+':'+cloud.authenticated+':'+(cloud.snapshot?.brokers?.map(x=>[x.id,x.status,x.observed_at].join('-')).join(',')||'')+':'+(cloud.telegramRequest?.state||'')+':'+(cloud.channels?.map(c=>[c.chat_id,c.verified,c.enabled,c.last_observed_at].join('-')).join(',')||'');changed=previous!==now;
@@ -143,23 +160,25 @@ function cloudBrokerRegistration(){
   if(!cloud.authenticated)return surface('REGISTER A CLOUD DEMO BROKER',empty('Sign in to a verified cloud account to register broker metadata. Registration is not enabled until private PostgreSQL is connected.'),'No MT5 password or trading operations accepted');
   return surface('REGISTER DEMO ACCOUNT · CLOUD METADATA',`<div class="info">Save the exact broker DEMO server and account number, then an operator must provision its separate read-only MT5 worker. This form NEVER logs into MT5.</div><div class="form-row"><label class="field"><span>ACCOUNT LABEL</span><input id="cloud-broker-label" maxlength="64" placeholder="My IC DEMO"></label><label class="field"><span>BROKER NAME</span><input id="cloud-broker-name" maxlength="64" placeholder="IC Markets"></label><label class="field wide"><span>EXACT DEMO SERVER</span><input id="cloud-broker-server" maxlength="100" placeholder="ICMarketsSC-Demo"></label><label class="field wide"><span>DEMO ACCOUNT NUMBER (NO PASSWORD)</span><input id="cloud-broker-login" maxlength="18" inputmode="numeric" autocomplete="off" placeholder="DEMO account number"></label>${btn('SAVE DEMO ACCOUNT METADATA','cloud-broker-register','btn-primary')}</div><p class="text-note">Only verified-user metadata is stored in the private database. No worker is automatically connected; trading remains OFF.</p>`);
 }
+
 function connectionSetup(){
  const sources=Array.isArray(cloud.channels)?cloud.channels:[];
  const accounts=cloudAccounts();
  const active=accounts.filter(b=>b.status==='CONNECTED').length;
- const telegramLive=cloud.telegramConnected===true;
+ const now=Date.now();
+ const receiving=sources.some(c=>c.enabled===true&&c.verified===true&&c.last_observed_at&&now-new Date(c.last_observed_at).getTime()<600000);
+ const ready=sources.some(c=>c.enabled===true&&c.verified===true)&&cloud.telegramBotReady;
  return `<section class="connection-setup" aria-label="Cloud connection setup">
- <div class="connection-heading"><div><span class="small-caps">SIGNED IN · ${esc(cloud.user?.role||'account').toUpperCase()}</span><h2>Welcome to EdgeQuant</h2><p>${esc(cloud.user?.email||'Verified account')} · Set up Telegram sources and MT5 demo broker metadata for your account.</p></div><span class="status-pill">TRADING OFF</span></div>
+ <div class="connection-heading"><div><span class="small-caps">SIGNED IN · ${esc(cloud.user?.role||'account').toUpperCase()}</span><h2>Welcome to EdgeQuant</h2><p>${esc(cloud.user?.email||'Verified account')} · Configure authorized connections for this account.</p></div><span class="status-pill">TRADING OFF</span></div>
  <div class="connection-cards">
- <div class="connection-card"><div class="connection-card-top"><span class="connection-emoji" aria-hidden="true">✈</span><span class="connection-status ${telegramLive?'linked':'pending'}">${telegramLive?'CONNECTED':'NOT CONNECTED'}</span></div>
- <h3>Telegram</h3><p>${sources.length} source${sources.length===1?'':'s'} registered. ${cloud.telegramRequest?.state?'Worker request: '+esc(cloud.telegramRequest.state)+'. ':''}Telegram account login and listener connection require a separately authorized cloud worker.</p>
- ${btn('SET UP TELEGRAM','nav:channels','btn-primary')}<small>Channel setup works; live messages are not connected yet.</small></div>
- <div class="connection-card"><div class="connection-card-top"><span class="connection-emoji" aria-hidden="true">▣</span><span class="connection-status ${active?'linked':'pending'}">${active?active+' DEMO CONNECTED':'NOT CONNECTED'}</span></div>
- <h3>MetaTrader 5</h3><p>${accounts.length} DEMO broker${accounts.length===1?'':'s'} registered. Real status requires a signed, provisioned MT5 worker.</p>
- ${btn('SET UP MT5','nav:brokers','btn-primary')}<small>Demo account metadata only. Never enter MT5 passwords here.</small></div>
+ <div class="connection-card"><div class="connection-card-top"><span class="connection-emoji">✈</span><span class="connection-status ${receiving?'linked':'pending'}">${receiving?'MESSAGES RECEIVING':ready?'WAITING FOR MESSAGES':'NOT CONNECTED'}</span></div>
+ <h3>Telegram</h3><p>${sources.length} registered source${sources.length===1?'':'s'}. ${cloud.telegramBotReady?'Bot webhook configured; authorization and incoming messages still need verification.':'Bot webhook not configured. Telegram account OTP mode needs a separate listener.'}</p>
+ ${btn('SET UP TELEGRAM','nav:channels','btn-primary')}<small>Bot mode reads only authorized chats that added the bot. Signal execution OFF.</small></div>
+ <div class="connection-card"><div class="connection-card-top"><span class="connection-emoji">▣</span><span class="connection-status ${active?'linked':'pending'}">${active?active+' DEMO CONNECTED':'NOT CONNECTED'}</span></div>
+ <h3>MetaTrader 5</h3><p>${accounts.length} DEMO broker${accounts.length===1?'':'s'} registered. A signed Windows cloud worker is required; this phone does not run MT5 itself.</p>
+ ${btn('SET UP MT5','nav:brokers','btn-primary')}<small>Read-only worker pairing; no MT5 passwords or order execution.</small></div>
  </div></section>`;
 }
-
 function dashboard(){return `${connectionSetup()}<section class="surface accent-top">
  ${sectionHeading('NEON DARK / COMMAND CENTER','SIGNED MT5 DEMO DATA ONLY • READ ONLY')}
  <div class="metric-grid">${metric('BALANCE',cloudVal(currentBroker()?.balance,true))}${metric('EQUITY',cloudVal(currentBroker()?.equity,true),'mint')}${metric('FLOATING P&L',cloudVal(currentBroker()?.floating,true),'purple')}${metric('PENDING ORDERS',cloudVal(currentBroker()?.pending_orders))}${metric('OPEN TRADES',cloudVal(currentBroker()?.open_positions),'amber')}${metric('MT5 STATUS',currentBroker()?'DEMO CONNECTED':'OFFLINE','mint',currentBroker()?'':'offline')}</div>
