@@ -4,7 +4,7 @@ const {answer,canonical}=require('../core');
 const {db}=require('../db');
 const {createPublicKey,verify}=require('node:crypto');
 const ID=/^[A-Za-z0-9_-]{12,80}$/;
-const CHAT=/^(-100)?[0-9]{5,20}$/;
+const CHAT=/^-?[0-9]{5,20}$/;
 function validBody(b){
  if(!b||typeof b!=='object'||Array.isArray(b)||Object.keys(b).sort().join(',')!=='dialogs,event_id,timestamp_ms,worker_id')return false;
  if(!ID.test(b.worker_id)||!ID.test(b.event_id)||!Number.isSafeInteger(b.timestamp_ms)||Math.abs(Date.now()-b.timestamp_ms)>90000||!Array.isArray(b.dialogs)||b.dialogs.length>100)return false;
