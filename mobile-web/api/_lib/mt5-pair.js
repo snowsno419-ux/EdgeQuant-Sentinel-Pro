@@ -85,3 +85,6 @@ module.exports=async function(req,res,action){
   }catch{await cx?.query('ROLLBACK').catch(()=>{});return answer(res,503,{error:'pairing_approval_unavailable'})}finally{cx?.release()}
  }catch{return answer(res,503,{error:'mt5_pairing_unavailable'})}
 };
+
+// Pure validation functions exposed for automated unit tests only; not HTTP routes.
+module.exports._validation={proofText,validateClaim,fingerprint};
