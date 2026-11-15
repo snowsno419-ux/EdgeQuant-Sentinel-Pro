@@ -15,3 +15,49 @@ button,select,input,textarea{font:inherit}button{cursor:pointer}button:disabled{
 .auth-choice button.active{border-color:var(--cyan);background:rgba(2,215,250,.13);color:var(--cyan);box-shadow:inset 0 -2px 0 var(--cyan)}
 .auth-choice button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 @media(max-width:700px){.auth-choice{max-width:none;width:100%}.auth-choice button{min-height:48px}}
+
+/* Login-first shell. The account API remains the authority for authentication. */
+body.auth-gated{padding-bottom:0}
+.auth-gated .menu-line,
+.auth-gated .command-strip,
+.auth-gated .system-strip,
+.auth-gated .sidebar,
+.auth-gated .side-backdrop,
+.auth-gated .mobile-bottom,
+.auth-gated .status-box,
+.auth-gated .page-indicators,
+.auth-gated #mobile-menu-button{display:none!important}
+.auth-gated .masthead{max-width:680px;margin:0 auto;padding:24px 12px 18px}
+.auth-gated .brand-main{margin:0 auto;gap:15px}
+.auth-gated .brand-logo{width:64px;height:64px}
+.auth-gated .brand-name{font-size:25px}
+.auth-gated .work-area{display:block;margin:12px auto;max-width:580px;padding:0 13px 24px;min-height:0}
+.auth-gated .main-view{width:100%;min-width:0}
+.auth-gated .page-heading{padding:8px 4px 10px;margin:0}
+.auth-gated .page-heading h1{font-size:clamp(24px,5vw,32px)}
+.auth-gated .page-heading p{font-size:12px}
+.auth-gated .main-content{padding:0;border:0;min-height:0}
+.auth-gated .surface{border-radius:14px;padding:clamp(18px,5vw,28px);box-shadow:var(--shadow);margin-top:10px}
+.auth-gated .form-row{display:grid;grid-template-columns:1fr;align-items:stretch;gap:14px}
+.auth-gated .field{width:100%;min-width:0;max-width:none}
+.auth-gated .field input,.auth-gated .field select{width:100%;max-width:100%;min-height:43px}
+.auth-gated .form-row .btn{width:100%;min-height:44px;margin-top:6px}
+.auth-gated .auth-choice{width:100%;max-width:none}
+.auth-wait{color:var(--muted);text-align:center;padding:28px}
+.connection-setup{margin:0 0 14px;padding:16px;background:linear-gradient(135deg,#091e32,#10142c);border:1px solid var(--line2);border-radius:11px}
+.connection-heading{display:flex;align-items:start;justify-content:space-between;gap:16px;margin:0 0 14px}
+.connection-heading h2{font-size:20px;margin:5px 0}
+.connection-heading p{font-size:12px;color:var(--muted);margin:0;max-width:580px}
+.connection-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.connection-card{background:#0b1b2e;border:1px solid #29445e;border-radius:11px;padding:18px;display:flex;flex-direction:column;gap:9px;min-width:0}
+.connection-card h3{font-size:19px;margin:0}
+.connection-card p{color:var(--muted);font-size:12px;line-height:1.55;flex:1;margin:0}
+.connection-card small{display:block;color:var(--muted);font-size:11px;line-height:1.5}
+.connection-card .btn{width:100%;min-height:42px}
+.connection-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.connection-emoji{display:inline-flex;width:36px;height:36px;align-items:center;justify-content:center;border-radius:9px;background:#113348;color:var(--cyan);font-size:23px}
+.connection-status{display:inline-flex;font-size:10px;font-weight:800;letter-spacing:.03em;border-radius:6px;border:1px solid #79652f;color:#ffd58a;background:#342c1c;padding:6px 8px;text-align:center}
+.connection-status.linked{border-color:#147c68;background:#0a3a30;color:#65f8c9}
+.connection-list{display:grid;gap:7px;margin-top:9px}
+.connection-source{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px}
+@media(max-width:700px){.auth-gated .masthead{padding:26px 14px 12px}.auth-gated .brand-name{font-size:22px}.auth-gated .brand-logo{width:54px;height:54px}.auth-gated .work-area{padding:0 10px 28px}.auth-gated .page-heading{padding:6px}.auth-gated .main-content{padding:0}.auth-gated .surface{margin-bottom:12px}.connection-cards{grid-template-columns:1fr}.connection-setup{padding:12px}.connection-heading h2{font-size:19px}.connection-source{align-items:flex-start;flex-direction:column}.connection-status{max-width:100%}}
