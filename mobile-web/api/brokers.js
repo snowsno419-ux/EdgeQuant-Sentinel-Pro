@@ -6,6 +6,8 @@ const {db,signedIn}=require('./_lib/db');
 const {parseBrokerMetadata,sameOrigin}=require('./_lib/registry');
 const MAX_BROKERS_PER_USER=10;
 module.exports=async function(req,res){
+ const action=typeof req.query?.action==='string'?req.query.action:'';
+ if(action.startsWith('pair-'))return require('./_lib/mt5-pair')(req,res,action.slice(5));
   if(!['GET','POST'].includes(req.method))return answer(res,405,{error:'method_not_allowed'});
   const pool=db();if(!pool)return answer(res,503,{error:'database_not_configured'});
   if(req.method==='POST'&&(!sameOrigin(req)||!/^application\/json(?:\s*;|$)/i.test(String(req.headers['content-type']||''))))return answer(res,403,{error:'invalid_request_origin_or_type'});

@@ -11,8 +11,8 @@ const DEFAULT={role:'receiver',language:'EN',theme:'neon',voice:'SI',lot:0.01,la
 const LS_KEY='edgequant_pc_web_v2_draft_only';
 function readDraft(){try{const x=JSON.parse(localStorage.getItem(LS_KEY)||'{}');if(!x||typeof x!=='object')return {...DEFAULT};return {...DEFAULT,...x,channels:Array.isArray(x.channels)?x.channels:[],brokers:Array.isArray(x.brokers)?x.brokers:[]};}catch{return {...DEFAULT}}}
 const prefs=readDraft();
-const cloud={reachable:false,database:false,registration:false,telegramInboxReady:false,workerRequestsReady:false,telegramRequestReady:false,telegramRequest:null,telegramConnected:false,mt5WorkerConnected:false,authChecked:false,channels:[],inbox:[],authenticated:false,user:null,snapshot:null,lastError:null};
-let page='profile',authTab='login',simulation=false,selectedDate=null,calDate=new Date(),toastTimer=null,log=[{date:new Date(),title:'Web preview started',detail:'Cloud trading service is NOT connected. Account metrics are unavailable.'}],filter='all';
+const cloud={reachable:false,database:false,registration:false,telegramInboxReady:false,workerRequestsReady:false,telegramRequestReady:false,telegramRequest:null,telegramConnected:false,telegramBotReady:false,telegramBotInfo:null,mt5PairingReady:false,mt5WorkerConnected:false,authChecked:false,channels:[],inbox:[],authenticated:false,user:null,snapshot:null,lastError:null};
+let page='profile',authTab='login',simulation=false,selectedDate=null,calDate=new Date(),toastTimer=null,log=[{date:new Date(),title:'Web preview started',detail:'Cloud trading service is NOT connected. Account metrics are unavailable.'}],filter='all',lastProof=null,lastPairing=null,pairStatus={};
 const $=q=>document.querySelector(q); const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function save(){localStorage.setItem(LS_KEY,JSON.stringify(prefs))}
 function slt(d=new Date()){return new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Colombo',year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(d)+' SLT'}
@@ -28,11 +28,29 @@ function metric(label,value,accent='cyan',extra=''){let col={cyan:'var(--cyan)',
 function cloudAccounts(){return Array.isArray(cloud.snapshot?.brokers)?cloud.snapshot.brokers:[]}
 function currentBroker(){return cloudAccounts().find(x=>x.status==='CONNECTED')||null}
 function cloudVal(value,asMoney=false){if(value===null||value===undefined||!Number.isFinite(Number(value)))return '—';return asMoney?Number(value).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):String(value)}
-function realBrokerSummary(){const bs=cloudAccounts();if(!bs.length)return empty(cloud.database?'No cloud broker registered for this verified user.':'Cloud database / worker not configured.');return '<div class="activity-list">'+bs.map(b=>`<div class="activity-item"><div class="activity-dot">●</div><div><b>${esc(b.label)}</b> <span class="text-note">${esc(b.status)}</span><div class="text-note">${esc(b.broker)} · ${esc(b.server)} · account ${esc(b.login_hint)} · Balance ${cloudVal(b.balance,true)} · Equity ${cloudVal(b.equity,true)}</div><small class="muted mono">${b.observed_at?esc(slt(new Date(b.observed_at))):'No observation'}</small>${cloud.workerRequestsReady&&b.status!=='CONNECTED'?btn('REQUEST DEMO CLOUD WORKER','cloud-worker-request:'+b.id,'btn-muted'):''}</div></div>`).join('')+'</div>'}
-async function checkCloud(){let changed=false;const firstCheck=!cloud.authChecked;try{const r=await fetch('/api/health',{cache:'no-store',credentials:'same-origin',headers:{Accept:'application/json'}});if(!r.ok)throw Error('Cloud API unavailable');const j=await r.json();const previous=cloud.reachable+':'+cloud.database+':'+cloud.authenticated+':'+(cloud.snapshot?.brokers?.map(x=>[x.id,x.status,x.observed_at].join('-')).join(',')||'')+':'+(cloud.telegramRequest?.state||'')+':'+(cloud.channels?.length||0);cloud.reachable=j.ok===true;cloud.database=j.database_ready===true;cloud.registration=j.registration_enabled===true;cloud.telegramInboxReady=j.telegram_inbox_ready===true;cloud.workerRequestsReady=j.worker_request_ready===true;cloud.telegramRequestReady=j.telegram_listener_request_ready===true;cloud.telegramConnected=j.telegram_connected===true;cloud.mt5WorkerConnected=j.mt5_worker_connected===true;cloud.authenticated=false;cloud.user=null;cloud.snapshot=null;cloud.telegramRequest=null;cloud.channels=[];cloud.inbox=[];cloud.lastError=null;
+
+function realBrokerSummary(){
+ const bs=cloudAccounts();
+ if(!bs.length)return empty(cloud.database?'No DEMO broker registered. Add one below first.':'Cloud database unavailable.');
+ return '<div class="activity-list">'+bs.map(b=>{
+  const p=pairStatus[b.id]?.pairing;
+  const token=lastPairing?.broker_id===b.id&&lastPairing.expires_at>Date.now()?lastPairing.token:null;
+  const actionButtons='<div class="option-list">'+
+   (cloud.workerRequestsReady&&b.status!=='CONNECTED'?btn('REQUEST MANAGED CLOUD WORKER','cloud-worker-request:'+b.id,'btn-muted'):'')+
+   (cloud.mt5PairingReady?btn('GENERATE PAIRING TOKEN','cloud-pair-start:'+b.id,'btn-primary')+btn('CHECK PAIR STATUS','cloud-pair-status:'+b.id,'btn-muted'):'')+
+   (p?.state==='CLAIMED'?btn('APPROVE READ-ONLY WORKER','cloud-pair-approve:'+b.id,'btn-muted'):'')+
+   '</div>';
+  const pairingInfo=p?'<p class="text-note">Pair: '+esc(p.state)+' • Worker '+esc(p.worker_id||'—')+
+   (p.fingerprint?' • Public key fingerprint: <b class="mono">'+esc(p.fingerprint)+'</b>':'')+'</p>':'';
+  const tokenBox=token?'<div class="pair-token"><b>Private one-time worker pairing token (15 minutes)</b><input aria-label="Pairing token" readonly value="'+esc(token)+'" onclick="this.select()"><p class="text-note">Copy only to your authorized Windows cloud worker. Never send the code in chat or screenshots. Broker ID: <span class="mono">'+esc(b.id)+'</span></p></div>':'';
+  return '<div class="activity-item"><div class="activity-dot">●</div><div class="broker-connection"><b>'+esc(b.label)+'</b> <span class="connection-status '+(b.status==='CONNECTED'?'linked':'pending')+'">'+esc(b.status)+'</span><div class="text-note">'+esc(b.broker)+' · '+esc(b.server)+' · account '+esc(b.login_hint)+' · Balance '+cloudVal(b.balance,true)+' · Equity '+cloudVal(b.equity,true)+'</div><small class="muted mono">'+(b.observed_at?esc(slt(new Date(b.observed_at))):'No signed telemetry')+'</small>'+pairingInfo+actionButtons+tokenBox+'</div></div>';
+ }).join('')+'</div>';
+}
+async function checkCloud(){let changed=false;const firstCheck=!cloud.authChecked;const previousAccountId=cloud.user?.id||null;try{const r=await fetch('/api/health',{cache:'no-store',credentials:'same-origin',headers:{Accept:'application/json'}});if(!r.ok)throw Error('Cloud API unavailable');const j=await r.json();const previous=cloud.reachable+':'+cloud.database+':'+cloud.authenticated+':'+(cloud.snapshot?.brokers?.map(x=>[x.id,x.status,x.observed_at].join('-')).join(',')||'')+':'+(cloud.telegramRequest?.state||'')+':'+(cloud.channels?.map(c=>[c.chat_id,c.verified,c.enabled,c.last_observed_at].join('-')).join(',')||'');cloud.reachable=j.ok===true;cloud.database=j.database_ready===true;cloud.registration=j.registration_enabled===true;cloud.telegramInboxReady=j.telegram_inbox_ready===true;cloud.workerRequestsReady=j.worker_request_ready===true;cloud.telegramRequestReady=j.telegram_listener_request_ready===true;cloud.telegramBotReady=j.telegram_bot_configured===true;cloud.mt5PairingReady=j.mt5_pairing_available===true;cloud.telegramConnected=j.telegram_connected===true;cloud.mt5WorkerConnected=j.mt5_worker_connected===true;cloud.authenticated=false;cloud.user=null;cloud.snapshot=null;cloud.telegramRequest=null;cloud.channels=[];cloud.inbox=[];cloud.lastError=null;
 if(cloud.database){const u=await fetch('/api/me',{credentials:'same-origin',cache:'no-store'});if(u.ok){cloud.user=await u.json();cloud.authenticated=true; if(['receiver','provider'].includes(cloud.user?.role))prefs.role=cloud.user.role;if(cloud.telegramInboxReady){const [c,i]=await Promise.all([fetch('/api/channels',{credentials:'same-origin',cache:'no-store'}),fetch('/api/telegram-inbox',{credentials:'same-origin',cache:'no-store'})]);cloud.channels=c.ok?(await c.json()).channels:[];cloud.inbox=i.ok?(await i.json()).messages:[]}if(cloud.telegramRequestReady){try{const tr=await fetch('/api/telegram-listener-requests',{credentials:'same-origin',cache:'no-store'});cloud.telegramRequest=tr.ok?(await tr.json()).request:null}catch{cloud.telegramRequest=null}}const d=await fetch('/api/dashboard',{credentials:'same-origin',cache:'no-store'});if(d.ok)cloud.snapshot=await d.json()}}
-const now=cloud.reachable+':'+cloud.database+':'+cloud.authenticated+':'+(cloud.snapshot?.brokers?.map(x=>[x.id,x.status,x.observed_at].join('-')).join(',')||'')+':'+(cloud.telegramRequest?.state||'')+':'+(cloud.channels?.length||0);changed=previous!==now;
+const now=cloud.reachable+':'+cloud.database+':'+cloud.authenticated+':'+(cloud.snapshot?.brokers?.map(x=>[x.id,x.status,x.observed_at].join('-')).join(',')||'')+':'+(cloud.telegramRequest?.state||'')+':'+(cloud.channels?.map(c=>[c.chat_id,c.verified,c.enabled,c.last_observed_at].join('-')).join(',')||'');changed=previous!==now;
 }catch(e){changed=cloud.reachable||cloud.authenticated;cloud.reachable=false;cloud.database=false;cloud.registration=false;cloud.authenticated=false;cloud.user=null;cloud.snapshot=null;cloud.telegramRequest=null;cloud.lastError=String(e).slice(0,100)}
+if(!cloud.authenticated||(previousAccountId&&previousAccountId!==cloud.user?.id)){lastPairing=null;lastProof=null;pairStatus={};cloud.telegramBotInfo=null}if(lastProof&&cloud.channels.some(c=>c.chat_id===lastProof.chat_id&&c.verified))lastProof=null;
 cloud.authChecked=true;if(firstCheck)changed=true;if(!cloud.authenticated){page='profile';}else if(page==='profile'&&firstCheck){page='dashboard';}
 const el=$('#api-health');if(el){el.textContent=!cloud.reachable?'UNAVAILABLE':!cloud.database?'API ONLINE · DB OFF':!cloud.authenticated?'LOGIN REQUIRED':'READ-ONLY ONLINE';el.className=cloud.reachable?'mint':'amber'}
 if(changed)render();}
@@ -72,6 +90,65 @@ async function cloudRequestTelegramListener(){
   message('Telegram listener request saved. Operator provisioning required; no Telegram login or trades.');
  }catch(e){message('Telegram request: '+String(e.message).slice(0,80))}
 }
+
+async function cloudCheckTelegramBot(setup=false){
+ if(!cloud.authenticated||!cloud.telegramBotReady)return message('Telegram Bot provider is not configured.');
+ try{
+  const r=await fetch(setup?'/api/telegram-bot-setup':'/api/telegram-bot-info',
+   setup?{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'}:{credentials:'same-origin',cache:'no-store'});
+  const j=await r.json();if(!r.ok)throw Error(j.error||'Bot status unavailable');
+  cloud.telegramBotInfo=j;render();
+  message(j.webhook_active?'Telegram Bot webhook ACTIVE. Add it to your authorized group/channel.':'Bot configured; webhook is NOT active yet.');
+ }catch(e){message('Bot status: '+String(e.message).slice(0,90))}
+}
+async function cloudChannelChallenge(chatId){
+ if(!cloud.authenticated||!cloud.telegramBotReady)return message('Telegram Bot bridge is not configured yet.');
+ try{
+  const r=await fetch('/api/channel-challenge',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId})});
+  const j=await r.json();if(!r.ok)throw Error(j.error||'Channel verification unavailable');
+  lastProof={chat_id:chatId,code:j.proof_code,expires_at:Date.now()+900000};
+  render();message('Post this one-time code in the Telegram chat as an admin within 15 minutes.');
+ }catch(e){message('Telegram verification: '+String(e.message).slice(0,85))}
+}
+async function cloudToggleChannel(chatId,enabled){
+ if(!cloud.authenticated)return;
+ try{
+  const r=await fetch('/api/channel-toggle',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:chatId,enabled})});
+  const j=await r.json();if(!r.ok)throw Error(j.error||'Channel switch unavailable');
+  await checkCloud();render();
+  message(enabled?'Read-only Telegram inbox enabled for verified source. Trading remains OFF.':'Source disabled.');
+ }catch(e){message('Source switch: '+String(e.message).slice(0,90))}
+}
+async function cloudPairStart(brokerId){
+ if(!cloud.authenticated||!cloud.mt5PairingReady)return message('MT5 worker pairing is not configured.');
+ try{
+  const r=await fetch('/api/mt5-pair-start',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({broker_id:brokerId})});
+  const j=await r.json();if(!r.ok)throw Error(j.error||'Pair code unavailable');
+  lastPairing={broker_id:brokerId,token:j.pairing_token,expires_at:Date.now()+900000};delete pairStatus[brokerId];
+  render();message('Private 15-minute pairing token generated. Enter it on your authorized Windows cloud worker.');
+ }catch(e){message('MT5 pairing: '+String(e.message).slice(0,85))}
+}
+async function cloudPairStatus(brokerId){
+ if(!cloud.authenticated)return;
+ try{
+  const r=await fetch('/api/mt5-pair-status?broker_id='+encodeURIComponent(brokerId),{credentials:'same-origin',cache:'no-store'});
+  const j=await r.json();if(!r.ok)throw Error(j.error||'Pairing status unavailable');
+  pairStatus[brokerId]=j;render();
+  message(j.worker_registered?'Read-only worker key is registered. Signed MT5 telemetry is required for CONNECTED status.':j.pairing?.state==='CLAIMED'?'Worker claim received. Verify fingerprint before approval.':'Pairing status refreshed.');
+ }catch(e){message('MT5 status: '+String(e.message).slice(0,85))}
+}
+async function cloudPairApprove(brokerId){
+ const p=pairStatus[brokerId]?.pairing;
+ if(!p||p.state!=='CLAIMED'||!p.fingerprint)return message('Check pending worker claim first.');
+ if(!confirm('Approve this read-only MT5 worker only after matching its fingerprint with the private Windows worker?'))return;
+ try{
+  const r=await fetch('/api/mt5-pair-approve',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({broker_id:brokerId})});
+  const j=await r.json();if(!r.ok)throw Error(j.error||'Approval unavailable');
+  lastPairing=null;await cloudPairStatus(brokerId);
+  message('Worker public key approved. Account remains OFFLINE until real signed DEMO telemetry arrives. Trading OFF.');
+ }catch(e){message('MT5 approval: '+String(e.message).slice(0,80))}
+}
+
 async function cloudRegisterBroker(){
   if(!cloud.authenticated||!cloud.database)return message('A verified cloud login and database are required. No account saved.');
   const label=$('#cloud-broker-label')?.value?.trim(),broker=$('#cloud-broker-name')?.value?.trim(),server=$('#cloud-broker-server')?.value?.trim(),login=$('#cloud-broker-login')?.value?.trim();
@@ -94,23 +171,25 @@ function cloudBrokerRegistration(){
   if(!cloud.authenticated)return surface('REGISTER A CLOUD DEMO BROKER',empty('Sign in to a verified cloud account to register broker metadata. Registration is not enabled until private PostgreSQL is connected.'),'No MT5 password or trading operations accepted');
   return surface('REGISTER DEMO ACCOUNT · CLOUD METADATA',`<div class="info">Save the exact broker DEMO server and account number, then an operator must provision its separate read-only MT5 worker. This form NEVER logs into MT5.</div><div class="form-row"><label class="field"><span>ACCOUNT LABEL</span><input id="cloud-broker-label" maxlength="64" placeholder="My IC DEMO"></label><label class="field"><span>BROKER NAME</span><input id="cloud-broker-name" maxlength="64" placeholder="IC Markets"></label><label class="field wide"><span>EXACT DEMO SERVER</span><input id="cloud-broker-server" maxlength="100" placeholder="ICMarketsSC-Demo"></label><label class="field wide"><span>DEMO ACCOUNT NUMBER (NO PASSWORD)</span><input id="cloud-broker-login" maxlength="18" inputmode="numeric" autocomplete="off" placeholder="DEMO account number"></label>${btn('SAVE DEMO ACCOUNT METADATA','cloud-broker-register','btn-primary')}</div><p class="text-note">Only verified-user metadata is stored in the private database. No worker is automatically connected; trading remains OFF.</p>`);
 }
+
 function connectionSetup(){
  const sources=Array.isArray(cloud.channels)?cloud.channels:[];
  const accounts=cloudAccounts();
  const active=accounts.filter(b=>b.status==='CONNECTED').length;
- const telegramLive=cloud.telegramConnected===true;
+ const now=Date.now();
+ const receiving=sources.some(c=>c.enabled===true&&c.verified===true&&c.last_observed_at&&now-new Date(c.last_observed_at).getTime()<600000);
+ const ready=sources.some(c=>c.enabled===true&&c.verified===true)&&cloud.telegramBotReady;
  return `<section class="connection-setup" aria-label="Cloud connection setup">
- <div class="connection-heading"><div><span class="small-caps">SIGNED IN · ${esc(cloud.user?.role||'account').toUpperCase()}</span><h2>Welcome to EdgeQuant</h2><p>${esc(cloud.user?.email||'Verified account')} · Set up Telegram sources and MT5 demo broker metadata for your account.</p></div><span class="status-pill">TRADING OFF</span></div>
+ <div class="connection-heading"><div><span class="small-caps">SIGNED IN · ${esc(cloud.user?.role||'account').toUpperCase()}</span><h2>Welcome to EdgeQuant</h2><p>${esc(cloud.user?.email||'Verified account')} · Configure authorized connections for this account.</p></div><span class="status-pill">TRADING OFF</span></div>
  <div class="connection-cards">
- <div class="connection-card"><div class="connection-card-top"><span class="connection-emoji" aria-hidden="true">✈</span><span class="connection-status ${telegramLive?'linked':'pending'}">${telegramLive?'CONNECTED':'NOT CONNECTED'}</span></div>
- <h3>Telegram</h3><p>${sources.length} source${sources.length===1?'':'s'} registered. ${cloud.telegramRequest?.state?'Worker request: '+esc(cloud.telegramRequest.state)+'. ':''}Telegram account login and listener connection require a separately authorized cloud worker.</p>
- ${btn('SET UP TELEGRAM','nav:channels','btn-primary')}<small>Channel setup works; live messages are not connected yet.</small></div>
- <div class="connection-card"><div class="connection-card-top"><span class="connection-emoji" aria-hidden="true">▣</span><span class="connection-status ${active?'linked':'pending'}">${active?active+' DEMO CONNECTED':'NOT CONNECTED'}</span></div>
- <h3>MetaTrader 5</h3><p>${accounts.length} DEMO broker${accounts.length===1?'':'s'} registered. Real status requires a signed, provisioned MT5 worker.</p>
- ${btn('SET UP MT5','nav:brokers','btn-primary')}<small>Demo account metadata only. Never enter MT5 passwords here.</small></div>
+ <div class="connection-card"><div class="connection-card-top"><span class="connection-emoji">✈</span><span class="connection-status ${receiving?'linked':'pending'}">${receiving?'MESSAGES RECEIVING':ready?'WAITING FOR MESSAGES':'NOT CONNECTED'}</span></div>
+ <h3>Telegram</h3><p>${sources.length} registered source${sources.length===1?'':'s'}. ${cloud.telegramBotReady?'Bot webhook configured; authorization and incoming messages still need verification.':'Bot webhook not configured. Telegram account OTP mode needs a separate listener.'}</p>
+ ${btn('SET UP TELEGRAM','nav:channels','btn-primary')}<small>Bot mode reads only authorized chats that added the bot. Signal execution OFF.</small></div>
+ <div class="connection-card"><div class="connection-card-top"><span class="connection-emoji">▣</span><span class="connection-status ${active?'linked':'pending'}">${active?active+' DEMO CONNECTED':'NOT CONNECTED'}</span></div>
+ <h3>MetaTrader 5</h3><p>${accounts.length} DEMO broker${accounts.length===1?'':'s'} registered. A signed Windows cloud worker is required; this phone does not run MT5 itself.</p>
+ ${btn('SET UP MT5','nav:brokers','btn-primary')}<small>Read-only worker pairing; no MT5 passwords or order execution.</small></div>
  </div></section>`;
 }
-
 function dashboard(){return `${connectionSetup()}<section class="surface accent-top">
  ${sectionHeading('NEON DARK / COMMAND CENTER','SIGNED MT5 DEMO DATA ONLY • READ ONLY')}
  <div class="metric-grid">${metric('BALANCE',cloudVal(currentBroker()?.balance,true))}${metric('EQUITY',cloudVal(currentBroker()?.equity,true),'mint')}${metric('FLOATING P&L',cloudVal(currentBroker()?.floating,true),'purple')}${metric('PENDING ORDERS',cloudVal(currentBroker()?.pending_orders))}${metric('OPEN TRADES',cloudVal(currentBroker()?.open_positions),'amber')}${metric('MT5 STATUS',currentBroker()?'DEMO CONNECTED':'OFFLINE','mint',currentBroker()?'':'offline')}</div>
@@ -130,19 +209,59 @@ function controlsProtection(){return `<div class="control-group" style="border-t
  <div class="small-caps" style="margin:8px 0">MANUAL PARTIAL CLOSE / AUTO PARTIAL</div><div class="option-list">${check('PARTIAL CLOSE ON/OFF','partial')}${check('AUTO 0.01: QUICK-LAYER FALLBACK','partialLayer')}</div><div class="form-row">${field('PROFIT +PIPS','partialPips','number','min="1"')}${field('CLOSE %','partialPercent','number','min="1" max="99"')}${btn('APPLY PARTIAL','draft-save','btn-muted')}${btn('PREVIEW + CONFIRM MANUAL PARTIAL','offline-info','btn-muted')}</div>
  <div class="text-note">BE suggestions must use a real market quote and selected entry. No live quote, no trade modification. Broker lot minimum and confirmation rules are not simulated here.</div></div>`}
 
+
 function cloudTelegram(){
  const sources=Array.isArray(cloud.channels)?cloud.channels:[];
- const registered=sources.length?'<div class="connection-list">'+sources.map(c=>`<div class="connection-source"><div><b>${esc(c.label)}</b><div class="text-note">Chat ID: ${esc(c.chat_id)} · ${esc(c.kind)}</div></div><span class="connection-status pending">OFF · LISTENER PENDING</span></div>`).join('')+'</div>':empty('No registered Telegram sources for this account.');
- return surface('TELEGRAM CONNECTION SETUP',`
- <div class="info"><b>Current status: NOT CONNECTED.</b> Your account must be authorized by a separate Telegram listener before messages can be read. Registering a chat does not log in to Telegram or start trades.</div>
- <div class="control-group"><b>Step 1 • Register a Telegram source</b><p class="text-note">Use the numeric Telegram group/channel chat ID with permission to access that source. Registration keeps it OFF until the listener is approved.</p>
- ${cloud.telegramInboxReady?`<div class="form-row"><label class="field">Telegram numeric Chat ID<input id="tg-cloud-chat" placeholder="-100123456789" maxlength="24" autocomplete="off"></label><label class="field wide">Source label<input id="tg-cloud-label" placeholder="Gold Limit VIP" maxlength="80"></label><label class="field">Signal mode<select id="tg-cloud-kind"><option>LIMIT</option><option>MARKET</option></select></label>${btn('REGISTER SOURCE (OFF)','cloud-add-channel','btn-primary')}</div>`:'<div class="notice">Telegram source database is not yet provisioned.</div>'}</div>
- <div class="control-group"><b>Step 2 • Request cloud listener</b><p class="text-note">Telegram phone OTP / channel discovery cannot run in this browser-only stage. An isolated worker requires account consent and separate provisioning. This request DOES NOT sign in to Telegram.</p><span class="connection-status pending">LISTENER NOT CONNECTED</span><p class="text-note">Worker request: ${cloud.telegramRequest?.state?esc(cloud.telegramRequest.state):'NOT SUBMITTED'}</p>${cloud.telegramRequestReady?(sources.length?btn('REQUEST CLOUD TELEGRAM LISTENER','cloud-telegram-listener-request','btn-primary'):'<div class="text-note">Register your source above before requesting a listener.</div>'):'<div class="notice">Listener request service is not ready.</div>'}</div>
- <h3>Your registered sources</h3>${registered}
- `, 'Verified account only • No Telegram login secrets stored here');
+ const recent=Array.isArray(cloud.inbox)?cloud.inbox:[];
+ const botInfo=cloud.telegramBotReady?'<div class="control-group"><b>Platform Bot Setup</b><p class="text-note">'+
+  (cloud.telegramBotInfo?.bot_username?'Bot username: <b>@'+esc(cloud.telegramBotInfo.bot_username)+'</b> · ':'')+
+  'Webhook: '+(cloud.telegramBotInfo?.webhook_active?'ACTIVE':'NOT VERIFIED')+'</p><div class="option-list">'+
+  btn('CHECK BOT STATUS','cloud-bot-info','btn-muted')+
+  (cloud.telegramBotInfo?.can_setup?btn('INITIALIZE BOT WEBHOOK','cloud-bot-setup','btn-primary'):'')+
+  '</div></div>':'';
+ const all=sources.map(c=>{
+  const status=c.enabled&&c.verified?'ON · READ ONLY':c.verified?'VERIFIED · OFF':'NOT VERIFIED · OFF';
+  const actions=c.verified?(c.enabled?btn('STOP READING','cloud-source-off:'+c.chat_id,'btn-muted'):btn('ENABLE READ-ONLY','cloud-source-on:'+c.chat_id,'btn-primary')):
+   (cloud.telegramBotReady?btn('VERIFY ADMIN ACCESS','cloud-challenge:'+c.chat_id,'btn-muted'):'<span class="text-note">Waiting for Bot configuration</span>');
+  return `<div class="connection-source"><div><b>${esc(c.label)}</b> <span class="connection-status ${c.enabled?'linked':'pending'}">${status}</span>
+   <div class="text-note">Chat ID ${esc(c.chat_id)} · ${esc(c.kind)} · Last received: ${c.last_observed_at?esc(slt(new Date(c.last_observed_at))):'never'}</div>
+   <div class="option-list">${actions}</div></div></div>`;
+ }).join('');
+ const proof=lastProof&&lastProof.expires_at>Date.now()?`<div class="pair-token"><b>One-time verification message for Chat ${esc(lastProof.chat_id)}</b>
+ <input aria-label="One-time chat proof" readonly value="${esc(lastProof.code)}" onclick="this.select()">
+ <p class="text-note">Post this exact message as a Telegram channel/group administrator within 15 minutes. Then tap REFRESH. Do not send the code to strangers.</p></div>`:'';
+ return surface('TELEGRAM · CLOUD CONNECTION',`
+ <div class="info"><b>Bot webhook: ${cloud.telegramBotReady?'CONFIGURED — ADD BOT TO CHAT':'NOT CONFIGURED'}.</b>
+ This is opt-in Bot API mode: it does NOT access your personal Telegram account or discover private groups. Messages appear only after a permitted chat adds the Bot, verification succeeds, and the source is enabled. Trading remains OFF.</div>
+ <div class="control-group"><b>Step 1 • Authorize the Telegram bot</b><p class="text-note">
+ Add the platform's configured EdgeQuant bot to your group/channel with required read privileges (channel: admin).
+ In a group, an admin can send <b>/eqid</b> to obtain its numeric chat ID. Channel owners can obtain its ID through a bot-admin setup.
+ ${cloud.telegramBotReady?'The Bot webhook can process authorized updates.':'An operator must first configure the Bot token and webhook secret in encrypted Vercel Production settings, and set the Telegram webhook.'}</p></div>
+ ${botInfo}
+ <div class="control-group"><b>Step 2 • Register your permitted source</b>
+ ${cloud.telegramInboxReady?`<div class="form-row"><label class="field">Telegram numeric Chat ID<input id="tg-cloud-chat" placeholder="-1001234567890" maxlength="24" autocomplete="off"></label>
+ <label class="field wide">Channel / Group label<input id="tg-cloud-label" placeholder="Gold Limit VIP" maxlength="80"></label>
+ <label class="field">Signal mode<select id="tg-cloud-kind"><option>LIMIT</option><option>MARKET</option></select></label>
+ ${btn('REGISTER SOURCE (OFF)','cloud-add-channel','btn-primary')}</div>`:'<div class="notice">Account-scoped Telegram database is not ready.</div>'}</div>
+ <div class="control-group"><b>Step 3 • Verify & enable read-only inbox</b>
+ <p class="text-note">Tap VERIFY ADMIN ACCESS for your source, post the one-time code as a chat admin, refresh the page, then enable read-only. Unverified source IDs cannot receive messages.</p>
+ <div class="option-list">${btn('REFRESH VERIFIED SOURCES','cloud-refresh','btn-muted')}</div>
+ ${proof}
+ ${all||empty('No Telegram sources registered yet.')}
+ </div>
+ <div class="control-group"><b>Alternative: personal Telegram account / MTProto listener</b>
+ <p class="text-note">Private chat/group list discovery and Telegram phone OTP need a separate encrypted account listener service. Bot mode does not provide those features.</p>
+ <p class="text-note">Account-listener worker request: ${cloud.telegramRequest?.state?esc(cloud.telegramRequest.state):'NOT SUBMITTED'}</p>
+ ${cloud.telegramRequestReady?(sources.length?btn('REQUEST ACCOUNT LISTENER','cloud-telegram-listener-request','btn-muted'):'<p class="text-note">Register a source before requesting.</p>'):'<p class="text-note">Request service unavailable.</p>'}</div>
+ `, 'Verified user only • Read-only messages • Zero MT5 order actions');
 }
-function channels(){return cloudTelegram()+note() }
-
+function channels(){
+ const messages=Array.isArray(cloud.inbox)?cloud.inbox:[];
+ const rows=messages.slice(0,15).map(m=>`<div class="activity-item"><div><b>${esc(m.kind)} · Chat ${esc(m.chat_id)}</b>
+ <p class="text-note" style="white-space:pre-wrap">${esc(m.body).slice(0,3000)}</p>
+ <small class="muted">${m.observed_at_ms?esc(slt(new Date(Number(m.observed_at_ms)))):'No timestamp'}</small></div></div>`).join('');
+ return cloudTelegram()+surface('RECEIVED TELEGRAM MESSAGES · READ ONLY',rows||empty('No messages received from an enabled, verified Telegram source.'),'Signed worker or verified Bot webhook only • Trading OFF')+note();
+}
 function channelRows(){if(!prefs.channels.length)return empty('No channels configured in this browser demo. Add a draft label above.');return `<div class="table-scroll"><table class="data-table"><thead><tr><th>CHANNEL</th><th>TYPE</th><th>ACTIVE</th><th>SIGNALS TODAY</th><th>MANAGE</th></tr></thead><tbody>${prefs.channels.map((c,i)=>`<tr><td>${esc(c.name)}</td><td>${esc(c.kind)}</td><td><button data-action="channel-toggle:${i}" class="btn btn-xs ${c.enabled?'btn-outline':'btn-muted'}">${c.enabled?'ON • DRAFT':'OFF • DRAFT'}</button></td><td>—</td><td><button class="btn btn-xs btn-muted" data-action="channel-remove:${i}">REMOVE</button></td></tr>`).join('')}</tbody></table></div>`}
 function brokers(){return surface('MT5 CLOUD CONNECTION STATUS',
  '<div class="info"><b>DEMO READ-ONLY STAGE.</b> Register your MT5 DEMO account details below. This does not log into MetaTrader or place orders. A dedicated signed Windows worker must be assigned before the connection becomes active.</div><div class="control-group"><b>Step 1 • Save DEMO account metadata</b><p class="text-note">Enter broker, server and account number. Your password is never requested in this page.</p></div>')+
@@ -202,7 +321,7 @@ function message(s){const el=$('#toast');el.textContent=s;el.classList.add('show
 function logEvent(t,d){log.push({date:new Date(),title:t,detail:d});if(log.length>60)log.shift()}
 function closeSidebar(){$('#sidebar').classList.remove('open');$('#side-backdrop').classList.remove('show')}
 function updatePref(el){const k=el.dataset.pref;if(!k||!Object.prototype.hasOwnProperty.call(DEFAULT,k))return;if(k==='role'){message('Role is locked to your verified account.');return}let v=el.type==='checkbox'?el.checked:el.value;if(el.type==='number'){v=Number(v);if(!Number.isFinite(v)||v<0){message('Invalid number; draft not saved.');return}}if(k==='layers')v=Math.max(1,Math.min(8,Math.floor(v)));if(k==='lot')v=Math.max(.01,v);if(k==='partialPercent')v=Math.max(1,Math.min(99,v));if(k==='maxTrades')v=Math.max(1,Math.floor(v));prefs[k]=v;save();if(['language','theme','voice','role'].includes(k)){render();} }
-function act(id){if(!cloud.authenticated&&!['auth-tab:login','auth-tab:register','cloud-resend','cloud-signup','cloud-login'].includes(id)){message('Sign in to EdgeQuant first.');return}if(id==='auth-tab:login'||id==='auth-tab:register'){authTab=id.slice('auth-tab:'.length);render();return}if(id==='cloud-resend'){cloudResendVerification();return}if(id==='cloud-signup'){cloudSignup();return}if(id==='cloud-add-channel'){cloudAddChannel();return}if(id==='cloud-telegram-listener-request'){cloudRequestTelegramListener();return}if(id.startsWith('cloud-worker-request:')){cloudRequestWorker(id.slice('cloud-worker-request:'.length));return}if(id==='cloud-login'){cloudLogin();return}if(id==='cloud-broker-register'){cloudRegisterBroker();return}if(id==='cloud-logout'){cloudLogout();return}if(id.startsWith('nav:'))return nav(id.slice(4));if(id==='draft-save'){save();logEvent('Draft settings saved','Saved in this browser only. No engine or cloud worker was modified.');message('Saved on this browser only — no live trading changes.');return}if(id==='offline-info'){message('Unavailable: live cloud MT5 / Telegram backend not connected.');return}if(id==='test-run'){simulation=true;logEvent('UI Test Mode enabled','This changes the page label only. No MT5 orders or account data.');render();message('UI TEST MODE only — no trades sent.');return}if(id==='stop-test'){simulation=false;logEvent('UI Test Mode stopped','No MT5 execution engine was running.');render();message('UI demo test stopped.');return}if(id.startsWith('role:')){message('Account role is locked at registration and cannot be switched.');return}if(id==='add-channel'){const el=$('#new-channel'),name=el?.value?.trim();if(!name)return message('Enter a channel display label.');if(prefs.channels.length>=30)return message('Maximum 30 draft channels.');prefs.channels.push({name:name.slice(0,55),kind:$('#new-channel-kind').value,enabled:false});save();render();message('Channel draft added. Not connected to Telegram.');return}if(id.startsWith('channel-remove:')||id.startsWith('channel-toggle:')){const [,i]=id.split(':'),idx=Number(i);if(!(idx>=0&&idx<prefs.channels.length))return;if(id.startsWith('channel-remove'))prefs.channels.splice(idx,1);else prefs.channels[idx].enabled=!prefs.channels[idx].enabled;save();render();return}if(id==='channels-on'||id==='channels-off'){prefs.channels.forEach(x=>x.enabled=id==='channels-on');save();render();message('Draft channel switches changed only in this browser.');return}if(id==='add-broker'){const label=$('#broker-name')?.value.trim(),server=$('#broker-server')?.value.trim();if(!label)return message('Enter a demo broker label.');if(prefs.brokers.length>=12)return message('Maximum 12 demo broker cards.');prefs.brokers.push({label:label.slice(0,50),server:(server||'').slice(0,70)});save();render();message('Demo broker label added. No MT5 connection.');return}if(id.startsWith('broker-remove:')){const i=Number(id.split(':')[1]);if(i>=0&&i<prefs.brokers.length){prefs.brokers.splice(i,1);save();render()}return}if(id.startsWith('calendar-')){if(id==='calendar-prev')calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1);if(id==='calendar-next')calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1);if(id==='calendar-now')calDate=new Date();if(id.startsWith('calendar-day:')){selectedDate=`${calDate.getFullYear()}-${calDate.getMonth()}-${id.split(':')[1]}`;message('No realized P&L records available for this date.')}render();return}if(id==='example-signal'){$('#source-text').value='GOLD SELL 3998-3996-3994 SL 4003 TP 3970';return}if(id==='clear-signal'){$('#source-text').value='';$('#parse-result').textContent='No message analyzed. No trades sent.';return}if(id==='analyze-signal'){const s=$('#source-text').value.trim();const m=s.match(/\b(BUY|SELL)\b/i),sym=s.match(/\b(XAUUSD|GOLD|EURUSD|AUDUSD|USDCAD)\b/i),prices=s.match(/\b(?:BUY|SELL)\b[^\d]{0,10}([\d.]+(?:\s*[-–]\s*[\d.]+)*)/i);$('#parse-result').textContent=s?(m&&sym&&prices?`SIMPLE UI PREVIEW ONLY\nDirection: ${m[1].toUpperCase()}\nSymbol: ${sym[1].toUpperCase()==='GOLD'?'XAUUSD':sym[1].toUpperCase()}\nSource entry: ${prices[1]}\nSL: ${s.match(/\bSL\s*:?\s*([\d.]+)/i)?.[1]||'not provided'}\nTP: ${s.match(/\bTP\s*:?\s*([\d.]+)/i)?.[1]||'not provided'}\n\nNO LIVE EXECUTION. Desktop parser rules are not connected.`:'No complete BUY/SELL + symbol + entry detected by this simplified demo. NO trade sent.'):'Paste a sample message first.';return}if(id==='compose-signal'){const sym=$('#sig-symbol').value,side=$('#sig-side').value,entry=$('#sig-entry').value,sl=$('#sig-sl').value,tp=$('#sig-tp').value,rng=$('#sig-range').value;if(!entry||!Number.isFinite(Number(entry))||Number(entry)<=0){message('Enter a valid entry price.');return}$('#studio-result').textContent=`PROVIDER SIGNAL PREVIEW — NOT SENT\n${sym} ${side} ${entry}${rng?' - '+rng:''}\nSL ${sl||'[not set]'} • TP ${tp||'[not set]'}\nQuick layer: +${$('#sig-quick').value||prefs.tp1} pips\nOrder mode: ${$('#sig-kind').value}\n\nTelegram and cloud publishing are disabled.`;return}if(id==='reset-demo'){if(!confirm('Delete this browser\'s UI draft settings and channel/broker labels?'))return;localStorage.removeItem(LS_KEY);window.location.reload()}}
+function act(id){if(!cloud.authenticated&&!['auth-tab:login','auth-tab:register','cloud-resend','cloud-signup','cloud-login'].includes(id)){message('Sign in to EdgeQuant first.');return}if(id==='auth-tab:login'||id==='auth-tab:register'){authTab=id.slice('auth-tab:'.length);render();return}if(id==='cloud-resend'){cloudResendVerification();return}if(id==='cloud-signup'){cloudSignup();return}if(id==='cloud-add-channel'){cloudAddChannel();return}if(id==='cloud-refresh'){checkCloud();return}if(id==='cloud-bot-info'){cloudCheckTelegramBot(false);return}if(id==='cloud-bot-setup'){cloudCheckTelegramBot(true);return}if(id.startsWith('cloud-challenge:')){cloudChannelChallenge(id.slice(16));return}if(id.startsWith('cloud-source-on:')){cloudToggleChannel(id.slice(16),true);return}if(id.startsWith('cloud-source-off:')){cloudToggleChannel(id.slice(17),false);return}if(id.startsWith('cloud-pair-start:')){cloudPairStart(id.slice(17));return}if(id.startsWith('cloud-pair-status:')){cloudPairStatus(id.slice(18));return}if(id.startsWith('cloud-pair-approve:')){cloudPairApprove(id.slice(19));return}if(id==='cloud-telegram-listener-request'){cloudRequestTelegramListener();return}if(id.startsWith('cloud-worker-request:')){cloudRequestWorker(id.slice('cloud-worker-request:'.length));return}if(id==='cloud-login'){cloudLogin();return}if(id==='cloud-broker-register'){cloudRegisterBroker();return}if(id==='cloud-logout'){cloudLogout();return}if(id.startsWith('nav:'))return nav(id.slice(4));if(id==='draft-save'){save();logEvent('Draft settings saved','Saved in this browser only. No engine or cloud worker was modified.');message('Saved on this browser only — no live trading changes.');return}if(id==='offline-info'){message('Unavailable: live cloud MT5 / Telegram backend not connected.');return}if(id==='test-run'){simulation=true;logEvent('UI Test Mode enabled','This changes the page label only. No MT5 orders or account data.');render();message('UI TEST MODE only — no trades sent.');return}if(id==='stop-test'){simulation=false;logEvent('UI Test Mode stopped','No MT5 execution engine was running.');render();message('UI demo test stopped.');return}if(id.startsWith('role:')){message('Account role is locked at registration and cannot be switched.');return}if(id==='add-channel'){const el=$('#new-channel'),name=el?.value?.trim();if(!name)return message('Enter a channel display label.');if(prefs.channels.length>=30)return message('Maximum 30 draft channels.');prefs.channels.push({name:name.slice(0,55),kind:$('#new-channel-kind').value,enabled:false});save();render();message('Channel draft added. Not connected to Telegram.');return}if(id.startsWith('channel-remove:')||id.startsWith('channel-toggle:')){const [,i]=id.split(':'),idx=Number(i);if(!(idx>=0&&idx<prefs.channels.length))return;if(id.startsWith('channel-remove'))prefs.channels.splice(idx,1);else prefs.channels[idx].enabled=!prefs.channels[idx].enabled;save();render();return}if(id==='channels-on'||id==='channels-off'){prefs.channels.forEach(x=>x.enabled=id==='channels-on');save();render();message('Draft channel switches changed only in this browser.');return}if(id==='add-broker'){const label=$('#broker-name')?.value.trim(),server=$('#broker-server')?.value.trim();if(!label)return message('Enter a demo broker label.');if(prefs.brokers.length>=12)return message('Maximum 12 demo broker cards.');prefs.brokers.push({label:label.slice(0,50),server:(server||'').slice(0,70)});save();render();message('Demo broker label added. No MT5 connection.');return}if(id.startsWith('broker-remove:')){const i=Number(id.split(':')[1]);if(i>=0&&i<prefs.brokers.length){prefs.brokers.splice(i,1);save();render()}return}if(id.startsWith('calendar-')){if(id==='calendar-prev')calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1);if(id==='calendar-next')calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1);if(id==='calendar-now')calDate=new Date();if(id.startsWith('calendar-day:')){selectedDate=`${calDate.getFullYear()}-${calDate.getMonth()}-${id.split(':')[1]}`;message('No realized P&L records available for this date.')}render();return}if(id==='example-signal'){$('#source-text').value='GOLD SELL 3998-3996-3994 SL 4003 TP 3970';return}if(id==='clear-signal'){$('#source-text').value='';$('#parse-result').textContent='No message analyzed. No trades sent.';return}if(id==='analyze-signal'){const s=$('#source-text').value.trim();const m=s.match(/\b(BUY|SELL)\b/i),sym=s.match(/\b(XAUUSD|GOLD|EURUSD|AUDUSD|USDCAD)\b/i),prices=s.match(/\b(?:BUY|SELL)\b[^\d]{0,10}([\d.]+(?:\s*[-–]\s*[\d.]+)*)/i);$('#parse-result').textContent=s?(m&&sym&&prices?`SIMPLE UI PREVIEW ONLY\nDirection: ${m[1].toUpperCase()}\nSymbol: ${sym[1].toUpperCase()==='GOLD'?'XAUUSD':sym[1].toUpperCase()}\nSource entry: ${prices[1]}\nSL: ${s.match(/\bSL\s*:?\s*([\d.]+)/i)?.[1]||'not provided'}\nTP: ${s.match(/\bTP\s*:?\s*([\d.]+)/i)?.[1]||'not provided'}\n\nNO LIVE EXECUTION. Desktop parser rules are not connected.`:'No complete BUY/SELL + symbol + entry detected by this simplified demo. NO trade sent.'):'Paste a sample message first.';return}if(id==='compose-signal'){const sym=$('#sig-symbol').value,side=$('#sig-side').value,entry=$('#sig-entry').value,sl=$('#sig-sl').value,tp=$('#sig-tp').value,rng=$('#sig-range').value;if(!entry||!Number.isFinite(Number(entry))||Number(entry)<=0){message('Enter a valid entry price.');return}$('#studio-result').textContent=`PROVIDER SIGNAL PREVIEW — NOT SENT\n${sym} ${side} ${entry}${rng?' - '+rng:''}\nSL ${sl||'[not set]'} • TP ${tp||'[not set]'}\nQuick layer: +${$('#sig-quick').value||prefs.tp1} pips\nOrder mode: ${$('#sig-kind').value}\n\nTelegram and cloud publishing are disabled.`;return}if(id==='reset-demo'){if(!confirm('Delete this browser\'s UI draft settings and channel/broker labels?'))return;localStorage.removeItem(LS_KEY);window.location.reload()}}
 document.addEventListener('click',e=>{const n=e.target.closest('[data-page]');if(n){if(n.dataset.page==='more'){$('#sidebar').classList.add('open');$('#side-backdrop').classList.add('show')}else nav(n.dataset.page);return}const b=e.target.closest('[data-action]');if(b){act(b.dataset.action);return}});
 document.addEventListener('change',e=>{const t=e.target;if(t.matches('[data-pref]'))updatePref(t);if(t.id==='lang-picker'){prefs.language=t.value;save();render()}if(t.id==='theme-picker'){prefs.theme=t.value;save();render()}if(t.id==='voice-picker'){prefs.voice=t.value;save();render()}});
 document.addEventListener('click',e=>{if(e.target?.id==='mobile-menu-button'){$('#sidebar').classList.add('open');$('#side-backdrop').classList.add('show')}if(e.target?.id==='side-backdrop')closeSidebar();if(e.target.closest('[data-filter]')){filter=e.target.closest('[data-filter]').dataset.filter;render()}});

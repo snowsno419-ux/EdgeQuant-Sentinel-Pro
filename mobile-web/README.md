@@ -20,7 +20,7 @@ Everything returns read-only status. `order_send`, public Telegram OTP, private 
 
 ## Activate only when ready
 
-Read `cloud-db/README.md` in the repository for the 4 migrations and **production-only encrypted environment variables**. Account registration is OFF until `EQ_SIGNUP_ENABLED=1` and required verified services have been connected. There is currently no managed database or Windows execution host attached to Vercel.
+Read `cloud-db/README.md` in the repository for the 8 migrations and **production-only encrypted environment variables**. Account registration is OFF until `EQ_SIGNUP_ENABLED=1` and required verified services have been connected. There is currently no managed database or Windows execution host attached to Vercel.
 
 Local validation: `node --test tests/*.js` at repository root plus `python -m unittest discover -s tests` and syntax checks. No secrets committed to Git.
 
@@ -40,3 +40,11 @@ No password reset API response reveals whether an account exists. Request freque
 - MT5: register DEMO broker metadata (broker, exact server, account number) and **REQUEST DEMO CLOUD WORKER**. The existing per-account worker request records intent only. No MT5 passwords are accepted in the public web UI; a separately hosted Windows terminal with signed read-only worker observations is required for actual connection.
 - Password reset remains on `/forgot-password.html`. Trading, Telegram monitoring, and broker order execution remain OFF.
 - Apply `cloud-db/0006_telegram_listener_requests.sql` after the prior migrations. No paid services or worker infrastructure are activated by these screens.
+
+## Telegram Bot + Windows DEMO MT5 pairing (2026-11-15)
+
+A secure optional **Telegram Bot webhook** now supports administrator-verified source access with 15-minute chat proof codes, enabled/OFF read-only inbox, edited messages and update replay protection. The Bot must be added to permitted chats and configured with an operator-owned token and webhook secret on Vercel. It is not a substitute for Telegram phone OTP/MTProto private-account group discovery.
+
+The **MT5 DEMO worker pairing** API issues a single-use 15-minute token; a separately hosted Windows terminal worker claims it by proving possession of its Ed25519 key, then the logged-in owner must approve that key fingerprint. The worker can only transmit signed account telemetry to the existing read-only dashboard. Vercel never receives broker passwords or sends orders.
+
+Run additive migrations 0007 and 0008 in the private Neon database. Read `CLOUD_TELEGRAM_MT5_GUIDE.md` for operator setup, exact endpoints, limitations, prerequisites and client setup. Both connectors fail closed if they are not configured. No cloud Windows host or live trading enabled by source changes.

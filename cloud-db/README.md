@@ -12,6 +12,8 @@ As the database owner in your provider's **private SQL Editor**, execute migrati
 4. `0004_worker_requests.sql` (user's request for separate DEMO Windows worker)
 5. `0005_password_reset.sql` (single-use, 20-minute account password recovery tokens)
 6. `0006_telegram_listener_requests.sql` (user-initiated Telegram listener provisioning requests; no credentials)
+7. `0007_telegram_bot_sources.sql` (one-time channel admin proof, replay safety and source verification)
+8. `0008_mt5_worker_pairing.sql` (one-time DEMO cloud worker public-key pairing)
 
 Prefer a separate least-privilege database role for Vercel API with DML grants only; never use the database owner as a public application credential. Restrict network access where supported, use TLS, backup/restore drills, and a scheduled retention job to delete expired verification/session/enrollment records and old event IDs and expired password reset tokens. The schema is intentionally NOT auto-applied from Vercel Functions.
 

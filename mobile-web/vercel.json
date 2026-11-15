@@ -67,6 +67,46 @@
     {
       "source": "/api/telegram-listener-requests",
       "destination": "/api/telegram?action=telegram-listener-requests"
+    },
+    {
+      "source": "/api/channel-challenge",
+      "destination": "/api/telegram?action=channel-challenge"
+    },
+    {
+      "source": "/api/channel-toggle",
+      "destination": "/api/telegram?action=channel-toggle"
+    },
+    {
+      "source": "/api/telegram-bot-webhook",
+      "destination": "/api/telegram?action=bot-webhook"
+    },
+    {
+      "source": "/api/mt5-pair",
+      "destination": "/api/brokers"
+    },
+    {
+      "source": "/api/mt5-pair-start",
+      "destination": "/api/brokers?action=pair-start"
+    },
+    {
+      "source": "/api/mt5-pair-status",
+      "destination": "/api/brokers?action=pair-status"
+    },
+    {
+      "source": "/api/mt5-pair-claim",
+      "destination": "/api/brokers?action=pair-claim"
+    },
+    {
+      "source": "/api/mt5-pair-approve",
+      "destination": "/api/brokers?action=pair-approve"
+    },
+    {
+      "source": "/api/telegram-bot-info",
+      "destination": "/api/telegram?action=bot-info"
+    },
+    {
+      "source": "/api/telegram-bot-setup",
+      "destination": "/api/telegram?action=bot-setup"
     }
   ]
 }
