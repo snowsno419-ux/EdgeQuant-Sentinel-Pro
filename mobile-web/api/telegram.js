@@ -9,4 +9,4 @@ const handlers=Object.freeze({
  'channel-toggle':require('./_lib/routes/channel-toggle'),
  'bot-webhook':require('./_lib/routes/telegram-bot-webhook')
 });
-module.exports=async function(req,res){const key=String(req.query?.action||new URL(req.url||'/','https://example.invalid').searchParams.get('action')||'');const fn=Object.hasOwn(handlers,key)?handlers[key]:null;return fn?fn(req,res):answer(res,404,{error:'unknown_telegram_action'})};
+module.exports=async function(req,res){const key=String(req.query?.action||new URL(req.url||'/','https://example.invalid').searchParams.get('action')||'');if(key==='bot-info'||key==='bot-setup')return require('./_lib/routes/bot-operator')(req,res,key);const fn=Object.hasOwn(handlers,key)?handlers[key]:null;return fn?fn(req,res):answer(res,404,{error:'unknown_telegram_action'})};
