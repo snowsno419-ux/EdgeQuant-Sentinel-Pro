@@ -112,7 +112,7 @@ function cloudPersonalTelegram(){
  const connection=cloud.telegramPersonal?.connection;
  const dialogs=Array.isArray(cloud.telegramPersonal?.dialogs)?cloud.telegramPersonal.dialogs:[];
  const isOnline=connection?.worker_online===true;
- const status=isOnline?'WORKER ONLINE':connection?.state==='PENDING'?'PROVISIONING REQUEST PENDING':connection?.state||'NOT CONNECTED';
+ const status=isOnline?'WORKER ONLINE':connection?.state==='CONNECTED'?'WORKER OFFLINE / STALE':connection?.state==='PENDING'?'PROVISIONING REQUEST PENDING':connection?.state||'NOT CONNECTED';
  const rows=dialogs.map(c=>{
   const active=isOnline&&c.enabled;
   return `<div class="connection-source"><div><b>${esc(c.label)}</b>
