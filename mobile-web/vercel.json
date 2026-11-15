@@ -63,6 +63,10 @@
     {
       "source": "/api/reset-password",
       "destination": "/api/auth?action=reset-password"
+    },
+    {
+      "source": "/api/telegram-listener-requests",
+      "destination": "/api/telegram?action=telegram-listener-requests"
     }
   ]
 }
