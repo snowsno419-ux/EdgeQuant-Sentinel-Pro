@@ -14,6 +14,7 @@ As the database owner in your provider's **private SQL Editor**, execute migrati
 6. `0006_telegram_listener_requests.sql` (user-initiated Telegram listener provisioning requests; no credentials)
 7. `0007_telegram_bot_sources.sql` (one-time channel admin proof, replay safety and source verification)
 8. `0008_mt5_worker_pairing.sql` (one-time DEMO cloud worker public-key pairing)
+9. `0009_telegram_personal.sql` (per-user Telegram dialog selection and signed worker heartbeat; no login secrets)
 
 Prefer a separate least-privilege database role for Vercel API with DML grants only; never use the database owner as a public application credential. Restrict network access where supported, use TLS, backup/restore drills, and a scheduled retention job to delete expired verification/session/enrollment records and old event IDs and expired password reset tokens. The schema is intentionally NOT auto-applied from Vercel Functions.
 
@@ -33,3 +34,5 @@ Email provider setup requires user authentication and domain ownership verificat
 `GET /api/health` advertises `database_ready`, `registration_enabled`, `password_reset_ready`, `telegram_inbox_ready`, `telegram_listener_request_ready` and `worker_request_ready`. **Do not expose registration, private worker events or paid accounts while those are false.** Public registration remains OFF until the owner enables it. `live_trade_execution` is always false at this stage.
 
 This does not deploy any database, buy hosting, connect Telegram, run an MT5 terminal, or enable live trades.
+
+**Personal Telegram API:** `/api/telegram-personal-dialogs`, `/api/telegram-personal-sync`, `/api/telegram-personal-disconnect` reuse the existing Telegram gateway. Listener registration requires an authorized operator to provision a per-user Ed25519 public key; a request alone never means Telegram is logged in.
