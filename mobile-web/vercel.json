@@ -83,6 +83,22 @@
     {
       "source": "/api/mt5-pair",
       "destination": "/api/brokers"
+    },
+    {
+      "source": "/api/mt5-pair-start",
+      "destination": "/api/brokers?action=pair-start"
+    },
+    {
+      "source": "/api/mt5-pair-status",
+      "destination": "/api/brokers?action=pair-status"
+    },
+    {
+      "source": "/api/mt5-pair-claim",
+      "destination": "/api/brokers?action=pair-claim"
+    },
+    {
+      "source": "/api/mt5-pair-approve",
+      "destination": "/api/brokers?action=pair-approve"
     }
   ]
 }
