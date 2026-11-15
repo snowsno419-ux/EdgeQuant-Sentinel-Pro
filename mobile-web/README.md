@@ -31,3 +31,12 @@ Run `cloud-db/0005_password_reset.sql` as the database owner before enabling the
 For the free Resend test sender, only `EQ_TEST_EMAIL` receives recovery emails. Start at Login / Register → Forgot your password, request a link, open the email within 20 minutes, choose a new 12+ character password, and enter the existing 6-digit authenticator code. The reset invalidates all current login sessions; log back in. No MT5 password or Telegram secret is involved.
 
 No password reset API response reveals whether an account exists. Request frequency is limited per email; reset guesses per token are limited. Do not copy email tokens or passwords into support chats or issue tickets.
+
+## Login-first interface and cloud connection setup (2026-11-15)
+
+- The public root displays the account sign-in / registration screen until `/api/me` confirms a verified, authenticated session. Only after authentication does the dashboard/navigation render. The server's per-account authentication remains authoritative; browser-only draft controls never grant access.
+- After login, the first dashboard section contains **Telegram** and **MT5** setup cards. Both show actual connection status, and both begin OFFLINE. Telegram source registration is account-scoped and OFF by default.
+- Telegram: register permitted channel/group numeric chat IDs, then **REQUEST CLOUD TELEGRAM LISTENER**. The request goes to the authenticated `/api/telegram-listener-requests` endpoint. It is **not** Telegram account authentication: phone OTP, 2FA, encrypted session provisioning, channel discovery and listener hosting are not built.
+- MT5: register DEMO broker metadata (broker, exact server, account number) and **REQUEST DEMO CLOUD WORKER**. The existing per-account worker request records intent only. No MT5 passwords are accepted in the public web UI; a separately hosted Windows terminal with signed read-only worker observations is required for actual connection.
+- Password reset remains on `/forgot-password.html`. Trading, Telegram monitoring, and broker order execution remain OFF.
+- Apply `cloud-db/0006_telegram_listener_requests.sql` after the prior migrations. No paid services or worker infrastructure are activated by these screens.
