@@ -100,7 +100,7 @@ function connectionSetup(){
  const active=accounts.filter(b=>b.status==='CONNECTED').length;
  const telegramLive=cloud.telegramConnected===true;
  return `<section class="connection-setup" aria-label="Cloud connection setup">
- <div class="connection-heading"><div><span class="small-caps">GET CONNECTED</span><h2>Connect your services</h2><p>Set up Telegram sources and MT5 demo broker metadata for this verified account.</p></div><span class="status-pill">TRADING OFF</span></div>
+ <div class="connection-heading"><div><span class="small-caps">SIGNED IN · ${esc(cloud.user?.role||'account').toUpperCase()}</span><h2>Welcome to EdgeQuant</h2><p>${esc(cloud.user?.email||'Verified account')} · Set up Telegram sources and MT5 demo broker metadata for your account.</p></div><span class="status-pill">TRADING OFF</span></div>
  <div class="connection-cards">
  <div class="connection-card"><div class="connection-card-top"><span class="connection-emoji" aria-hidden="true">✈</span><span class="connection-status ${telegramLive?'linked':'pending'}">${telegramLive?'CONNECTED':'NOT CONNECTED'}</span></div>
  <h3>Telegram</h3><p>${sources.length} source${sources.length===1?'':'s'} registered. ${cloud.telegramRequest?.state?'Worker request: '+esc(cloud.telegramRequest.state)+'. ':''}Telegram account login and listener connection require a separately authorized cloud worker.</p>
@@ -193,6 +193,7 @@ function render(){
  if(signedIn)renderNav();else{$('#sidebar-nav').innerHTML='';$('#mobile-nav').innerHTML=''}
  updateClock();
  const e=$('#api-health');if(e)e.textContent=!cloud.reachable?'CHECKING / OFFLINE':!cloud.database?'API ONLINE · DB OFF':!cloud.authenticated?'LOGIN REQUIRED':'READ-ONLY ONLINE';
+ const accountButton=document.querySelector('.system-strip [data-page="profile"]');if(accountButton)accountButton.textContent=signedIn?'MY ACCOUNT':'LOGIN / REGISTER';
 }
 function updateClock(){const x=$('#slt-clock');if(x)x.textContent='SRI LANKA • '+slt().split(' SLT')[0]+' SLT'}
 function message(s){const el=$('#toast');el.textContent=s;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3200)}
