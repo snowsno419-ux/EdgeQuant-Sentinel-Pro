@@ -48,3 +48,9 @@ A secure optional **Telegram Bot webhook** now supports administrator-verified s
 The **MT5 DEMO worker pairing** API issues a single-use 15-minute token; a separately hosted Windows terminal worker claims it by proving possession of its Ed25519 key, then the logged-in owner must approve that key fingerprint. The worker can only transmit signed account telemetry to the existing read-only dashboard. Vercel never receives broker passwords or sends orders.
 
 Run additive migrations 0007 and 0008 in the private Neon database. Read `CLOUD_TELEGRAM_MT5_GUIDE.md` for operator setup, exact endpoints, limitations, prerequisites and client setup. Both connectors fail closed if they are not configured. No cloud Windows host or live trading enabled by source changes.
+
+## Personal Telegram is the primary connection mode
+
+The Telegram setup page now leads with **PERSONAL TELEGRAM ACCOUNT**, placing the Bot flow below as an optional mode. From a verified EdgeQuant account the client can request provisioning of an isolated MTProto listener **without first registering a Bot source**. Only a correctly signed worker in the authorized account scope can provide dialog names; the user can then select channel/group monitoring on/off. `cloud-db/0009_telegram_personal.sql` adds these account-scoped selections and worker heartbeat. Users can revoke the worker from the web UI.
+
+**Important:** Browser-based phone OTP and Telegram 2FA self-service are not implemented or enabled. This source does not create or run a persistent encrypted Telegram client. Operating personal Telegram on mobile requires a hosted isolated MTProto listener, secure challenge relay, Telegram API ID/hash, encrypted per-client sessions, admin provisioning, and user consent. Read `TELEGRAM_PERSONAL_SETUP_SI.md` before offering it to clients. Bot mode stays optional; MT5 live trading remains OFF.
