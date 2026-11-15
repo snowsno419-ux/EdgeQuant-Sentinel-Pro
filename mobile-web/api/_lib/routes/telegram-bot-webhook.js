@@ -32,7 +32,7 @@ module.exports=async(req,res)=>{
   }
   const kind=event.kind.startsWith('edited_')?'edit':'new';
   const ins=await cx.query("INSERT INTO telegram_inbox(user_id,chat_id,message_id,reply_to_id,edit_date_ms,kind,body,observed_at_ms) SELECT s.user_id,$1,$2,$3,$4,$5,$6,$7 FROM telegram_sources s WHERE s.chat_id=$1 AND s.enabled=TRUE AND s.verified_at>NOW()-INTERVAL '30 days' ON CONFLICT(user_id,chat_id,message_id,edit_date_ms) DO NOTHING RETURNING user_id",[event.chat_id,event.message_id,event.reply_to_id,event.edit_date_ms,kind,event.text,event.observed_at_ms]);
-  if(ins.rowCount)await cx.query('UPDATE telegram_sources SET last_observed_at=NOW() WHERE chat_id=$1 AND enabled=TRUE AND verified_at>NOW()-INTERVAL '30 days'',[event.chat_id]);
+  if(ins.rowCount)await cx.query("UPDATE telegram_sources SET last_observed_at=NOW() WHERE chat_id=$1 AND enabled=TRUE AND verified_at>NOW()-INTERVAL '30 days'",[event.chat_id]);
   await cx.query('COMMIT');
   return answer(res,200,{ok:true,received:true,live_trade_execution:false});
  }catch{
