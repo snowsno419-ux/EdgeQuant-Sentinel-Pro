@@ -44,6 +44,10 @@ IDENTITY_PATH = DATA_DIR / "worker_identity.enc"
 SYNC_INTERVAL = 120
 
 
+class WorkerRevoked(RuntimeError):
+    """An authorization failure that must halt further personal message handling."""
+
+
 def env_settings() -> tuple[int, str, Fernet]:
     try:
         api_id = int(os.environ.get("EQ_TG_API_ID", "0"))
@@ -121,6 +125,8 @@ def signed_post(path: str, payload: dict, worker_id: str, private_key: Ed25519Pr
             return json.loads(response.read(100000).decode("utf-8"))
     except urllib.error.HTTPError as err:
         # Never log Telegram content, headers or authentication credentials.
+        if err.code in (401, 403):
+            raise WorkerRevoked("Worker authorization revoked or missing") from None
         raise RuntimeError("Cloud observation rejected (HTTP " + str(err.code) + ")") from None
 
 
@@ -231,11 +237,14 @@ async def monitor(api_id: int, api_hash: str, fernet: Fernet) -> None:
                 await asyncio.to_thread(
                     signed_post, "/api/telegram-observation", payload, worker_id, private_key
                 )
+            except WorkerRevoked:
+                enabled_chats.clear()
+                print("Telegram worker permission was revoked; message uploads stopped.", file=sys.stderr)
             except RuntimeError:
                 # Fail closed; do not queue sensitive messages on disk.
                 print("A read-only Telegram observation was not accepted.", file=sys.stderr)
 
-    @client.on(events.NewMessage(incoming=True))
+    @client.on(events.NewMessage())
     async def new_message(event):
         await on_event(event, "new")
 
@@ -253,6 +262,10 @@ async def monitor(api_id: int, api_hash: str, fernet: Fernet) -> None:
                 enabled_chats.clear()
                 enabled_chats.update(updated)
                 print("Signed heartbeat accepted; enabled read-only sources:", len(enabled_chats))
+            except WorkerRevoked:
+                enabled_chats.clear()
+                print("Worker key revoked: stopping personal Telegram listener.", file=sys.stderr)
+                return
             except Exception:
                 enabled_chats.clear()
                 print("Dialog heartbeat failed; all message uploading paused.", file=sys.stderr)
@@ -260,6 +273,23 @@ async def monitor(api_id: int, api_hash: str, fernet: Fernet) -> None:
     finally:
         enabled_chats.clear()
         await client.disconnect()
+
+
+async def logout_private_host(api_id: int, api_hash: str, fernet: Fernet) -> None:
+    if not SESS_PATH.exists():
+        print("No local Telegram session exists.")
+        return
+    saved = read_encrypted(SESS_PATH, fernet).decode("ascii")
+    client = telegram_client(api_id, api_hash, StringSession(saved))
+    await client.connect()
+    try:
+        if await client.is_user_authorized():
+            await client.log_out()
+    finally:
+        await client.disconnect()
+    SESS_PATH.unlink(missing_ok=True)
+    IDENTITY_PATH.unlink(missing_ok=True)
+    print("Telegram account logged out on worker, encrypted local session and identity files removed.")
 
 
 async def run(mode: str) -> None:
@@ -275,13 +305,15 @@ async def run(mode: str) -> None:
         print(pub)
     elif mode == "login":
         await login_private_host(api_id, api_hash, fernet)
+    elif mode == "logout":
+        await logout_private_host(api_id, api_hash, fernet)
     else:
         await monitor(api_id, api_hash, fernet)
 
 
 def main():
     parser = argparse.ArgumentParser(description="EdgeQuant isolated personal Telegram read-only listener")
-    parser.add_argument("mode", choices=["identity", "login", "listen"])
+    parser.add_argument("mode", choices=["identity", "login", "listen", "logout"])
     args = parser.parse_args()
     try:
         asyncio.run(run(args.mode))
