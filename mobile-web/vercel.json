@@ -67,6 +67,22 @@
     {
       "source": "/api/telegram-listener-requests",
       "destination": "/api/telegram?action=telegram-listener-requests"
+    },
+    {
+      "source": "/api/channel-challenge",
+      "destination": "/api/telegram?action=channel-challenge"
+    },
+    {
+      "source": "/api/channel-toggle",
+      "destination": "/api/telegram?action=channel-toggle"
+    },
+    {
+      "source": "/api/telegram-bot-webhook",
+      "destination": "/api/telegram?action=bot-webhook"
+    },
+    {
+      "source": "/api/mt5-pair",
+      "destination": "/api/brokers"
     }
   ]
 }
