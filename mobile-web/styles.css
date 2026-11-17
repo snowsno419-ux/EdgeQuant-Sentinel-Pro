@@ -305,3 +305,13 @@ body:not(.auth-gated) .metric{border-radius:12px}
  .risk-auth-panel .surface{padding:20px!important}
  .risk-auth-preview-head{flex-direction:column;align-items:flex-start}
 }
+
+
+/* Read-only Telegram recovery preview: separated from executable risk settings. */
+.risk-recovery-preview{margin:18px 0 12px;padding:14px;background:linear-gradient(140deg,#102d39,#101b2e);border:1px solid #2d6770;border-radius:12px}
+.risk-recovery-preview .risk-global-state{font-size:9px;padding:5px 9px;color:#ffc875;border-color:#75633a}
+.risk-recovery-preview .split b{font-size:11px;letter-spacing:.05em;color:#70dde4}
+.risk-recovery-preview .risk-card-form{margin:10px 0}
+.risk-recovery-preview .risk-card-form label{white-space:normal;gap:7px}
+.risk-recovery-preview .risk-card-form input[type=number]{width:96px}
+.risk-recovery-preview .text-note{font-size:11px;line-height:1.6}
