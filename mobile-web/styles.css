@@ -185,3 +185,123 @@ select:focus,input:focus,textarea:focus{border-color:var(--risk-info);box-shadow
  html{scroll-behavior:auto}
  .btn,.risk-track-fill{transition:none}
 }
+
+
+/* ===== OPTION B / VISIBLE 2.0 LAYOUT REBUILD — all authenticated pages ===== */
+body:not(.auth-gated) .menu-line{display:none!important}
+body:not(.auth-gated) .site-header{
+ display:grid;grid-template-columns:minmax(300px,1fr) auto;gap:3px 16px;
+ padding:5px 17px 6px;border-bottom:1px solid #234261;
+ background:#0a1321;box-shadow:0 8px 30px #01070d52
+}
+body:not(.auth-gated) .masthead{min-width:0;min-height:58px;padding:2px 4px}
+body:not(.auth-gated) .brand-main{gap:10px}
+body:not(.auth-gated) .brand-logo{width:43px;height:43px;border-radius:12px}
+body:not(.auth-gated) .brand-name{font-size:18px;line-height:1.15}
+body:not(.auth-gated) .brand-tagline{display:none}
+body:not(.auth-gated) .brand-foot{display:none}
+body:not(.auth-gated) .brand-mode{font-size:9px;margin-top:3px;color:#8aa9c4;letter-spacing:.11em}
+body:not(.auth-gated) .status-box{width:220px;min-height:44px;padding:7px;font-size:10px}
+body:not(.auth-gated) .command-strip{padding:2px 4px;align-self:center}
+body:not(.auth-gated) .engine-actions{gap:6px}
+body:not(.auth-gated) .engine-actions .btn{min-width:0;min-height:33px;padding:6px 12px;border-radius:9px}
+body:not(.auth-gated) .appearance-options{gap:6px}
+body:not(.auth-gated) .appearance-options label{font-size:9px}
+body:not(.auth-gated) .appearance-options select{font-size:11px;padding:5px 6px}
+body:not(.auth-gated) .system-strip{grid-column:1/-1;min-height:31px;padding:3px 5px 0;gap:17px;border-top:1px solid #1d2e47}
+body:not(.auth-gated) .system-strip>div:not(.system-clock){flex-direction:row;gap:6px}
+body:not(.auth-gated) .system-strip small{font-size:10px}
+body:not(.auth-gated) .system-strip strong{font-size:10px}
+body:not(.auth-gated) .mini-action{padding:6px 9px;border-radius:8px}
+body:not(.auth-gated) .accent-line{display:none}
+body:not(.auth-gated) .work-area{gap:19px;padding:19px;min-height:calc(100vh - 152px)}
+body:not(.auth-gated) .sidebar{top:18px;width:237px;max-height:calc(100vh - 178px);border-color:#28445d;border-radius:15px}
+body:not(.auth-gated) .sidebar-brand{margin:0 9px;padding:15px 10px 13px}
+body:not(.auth-gated) .sidebar-brand b{font-size:11px;letter-spacing:.06em}
+body:not(.auth-gated) .sidebar-brand small{font-size:9px}
+body:not(.auth-gated) .nav-group-title{font-size:10px;letter-spacing:.14em}
+body:not(.auth-gated) .nav-item{font-size:12px;gap:11px}
+body:not(.auth-gated) .nav-dot{width:23px;font-size:17px;text-align:center;color:#85b9dd}
+body:not(.auth-gated) .page-heading{margin:0 0 15px;padding:3px 0 8px;border-bottom:1px solid #22334c}
+body:not(.auth-gated) .page-heading h1{font-size:28px;font-weight:790;letter-spacing:-.055em}
+body:not(.auth-gated) .page-heading p{font-size:12px}
+body:not(.auth-gated) .main-content{min-height:65vh}
+body:not(.auth-gated) .risk-hub-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+body:not(.auth-gated) .risk-card{padding:20px;border-radius:17px;background:linear-gradient(145deg,#14253a,#0f1b2d)}
+body:not(.auth-gated) .risk-card h3{font-size:21px}
+body:not(.auth-gated) .risk-hub-heading h2{font-size:25px}
+body:not(.auth-gated) .surface{border-color:#263f57;border-radius:16px}
+body:not(.auth-gated) .metric{border-radius:12px}
+
+/* Premium account-creation entry: a NEW 2-column product landing, never simulated trading */
+.auth-gated .site-header{background:transparent;border:none}
+.auth-gated .masthead{max-width:1280px!important;margin:0 auto;padding:18px 24px!important}
+.auth-gated .brand-logo{width:45px;height:45px}
+.auth-gated .brand-name{font-size:19px}
+.auth-gated .brand-tagline{display:none}
+.auth-gated .brand-foot{display:none}
+.auth-gated .work-area{max-width:1320px!important;margin:0 auto!important;padding:13px 24px 42px!important;display:block;min-height:0}
+.auth-gated .main-view{width:100%;max-width:none!important}
+.auth-gated .page-heading{display:none!important}
+.auth-gated .main-content{padding:0!important;border:0!important;background:transparent!important;min-height:0!important}
+.risk-auth-layout{display:grid;grid-template-columns:minmax(0,1.18fr) minmax(350px,.82fr);gap:28px;align-items:stretch}
+.risk-auth-intro{border-radius:22px;padding:clamp(24px,5vw,48px);background:radial-gradient(ellipse at 5% 10%,#153e6177,transparent 65%),linear-gradient(135deg,#111e30,#0c1423);border:1px solid #28455f;display:flex;flex-direction:column;min-height:510px;box-shadow:0 18px 44px #01070d65}
+.auth-kicker{font-size:11px;letter-spacing:.12em;font-weight:850;color:#65dbed}
+.kicker-dot{color:#23deb7;padding-right:7px}
+.auth-variant{display:inline-block;background:#1a344a;border:1px solid #316277;padding:5px 7px;border-radius:8px;font-size:9px;margin-left:8px;white-space:nowrap}
+.risk-auth-intro h1{font-size:clamp(36px,4.2vw,59px);letter-spacing:-.065em;line-height:1.045;margin:35px 0 14px;font-weight:800}
+.risk-auth-intro h1 em{font-style:normal;color:#49cde8}
+.auth-lead{max-width:490px;color:#a7bad1;line-height:1.7;font-size:13px;margin:0 0 27px}
+.risk-auth-preview{padding:17px;background:#081624b9;border:1px solid #2a4a61;border-radius:14px}
+.risk-auth-preview-head{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:10px;color:#84adca;letter-spacing:.04em}
+.risk-auth-preview-head span{font-size:9px;color:#8195aa}
+.risk-auth-sample{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:15px 0 8px}
+.risk-auth-sample b{font-size:12px}
+.risk-auth-sample small{display:block;color:#8ba3bb;font-size:10px;margin-top:3px}
+.risk-auth-sample>strong{color:#efbb73;font-size:9px;white-space:nowrap}
+.risk-auth-track{height:9px;background:#1d3345;border-radius:999px}
+.risk-auth-track-fill{height:100%;width:0;background:#2dba9b}
+.risk-auth-explain{font-size:10px;line-height:1.5;color:#98adbe}
+.auth-feature-list{display:flex;flex-wrap:wrap;gap:13px 17px;margin-top:21px;color:#b6cbda;font-size:11px}
+.auth-feature-list span{color:#5ed4f1;padding-right:4px}
+.risk-auth-open-preview{display:inline-flex;align-items:center;justify-content:center;text-align:center;margin-top:18px;background:#38b7d8;border:1px solid #47d0e9;border-radius:10px;padding:12px 15px;color:#04263a;font-size:11px;letter-spacing:.04em;font-weight:850}
+.risk-auth-open-preview:hover{filter:brightness(1.1)}
+.risk-auth-annotation{margin-top:auto;padding-top:18px;color:#8297ad;font-size:10px;line-height:1.5}
+.risk-auth-panel{display:flex;align-items:center}
+.risk-auth-panel .surface{width:100%;margin:0!important;padding:30px!important;background:#101b2c;border-radius:19px;box-shadow:0 16px 45px #02050e60}
+.risk-auth-panel .panel-title{font-size:21px;letter-spacing:-.03em}
+.risk-auth-panel .form-row{display:flex;flex-direction:column;align-items:stretch}
+.risk-auth-panel .field{width:100%}
+.risk-auth-panel .field input,.risk-auth-panel .field select{width:100%;min-height:43px}
+.risk-auth-panel .form-row .btn{width:100%;min-height:43px}
+.risk-auth-panel .auth-choice{width:100%;max-width:none}
+.risk-auth-panel .auth-choice button{font-size:11px;letter-spacing:.09em;border-radius:10px}
+
+/* Maintain 1366×768 and mobile access without clipping controls. */
+@media(max-width:1450px){
+ body:not(.auth-gated) .risk-hub-grid{grid-template-columns:1fr}
+ body:not(.auth-gated) .status-box{display:none}
+}
+@media(max-width:1120px){
+ body:not(.auth-gated) .site-header{display:block;padding:10px 12px}
+ body:not(.auth-gated) .command-strip{padding:6px 4px}
+ body:not(.auth-gated) .appearance-options{margin-left:auto}
+ body:not(.auth-gated) .system-strip{padding-top:7px}
+ .risk-auth-layout{grid-template-columns:1fr}
+ .risk-auth-intro{min-height:0}
+ .risk-auth-panel{align-items:stretch}
+}
+@media(max-width:700px){
+ body:not(.auth-gated) .work-area{padding:9px 8px 77px}
+ body:not(.auth-gated) .site-header{padding:5px 10px}
+ body:not(.auth-gated) .command-strip{display:none}
+ body:not(.auth-gated) .system-strip{flex-wrap:wrap;gap:8px}
+ body:not(.auth-gated) .page-heading h1{font-size:23px}
+ body:not(.auth-gated) .risk-card{padding:13px}
+ .auth-gated .masthead{padding:14px 16px!important}
+ .auth-gated .work-area{padding:12px 12px 24px!important}
+ .risk-auth-intro{padding:22px;border-radius:15px}
+ .risk-auth-intro h1{font-size:38px;margin:21px 0 12px}
+ .risk-auth-panel .surface{padding:20px!important}
+ .risk-auth-preview-head{flex-direction:column;align-items:flex-start}
+}
