@@ -1,0 +1,42 @@
+name: EdgeQuant Phase 7 — Read-only cloud checks
+
+on:
+  pull_request:
+    paths:
+      - 'mobile-web/**'
+      - 'cloud-worker/**'
+      - 'cloud-tests/**'
+      - '.github/workflows/phase7-readonly-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install cloud API test dependency
+        run: npm install --prefix mobile-web --no-audit --no-fund
+      - name: Node syntax checks
+        run: |
+          node --check mobile-web/app.js
+          node --check mobile-web/api/dashboard.js
+          node --check mobile-web/api/_lib/signal-preview.js
+          node --check mobile-web/api/_lib/connection-status.js
+      - name: Cloud read-only regression tests
+        run: node --test cloud-tests/test_*.js
+      - name: Python unit test dependency
+        run: python -m pip install "cryptography>=42,<47"
+      - name: Offline DEMO worker fail-closed tests
+        run: python -m unittest discover -s cloud-tests -p 'test_phase7_*.py' -v

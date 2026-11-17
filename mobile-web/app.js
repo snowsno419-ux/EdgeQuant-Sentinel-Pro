@@ -235,7 +235,25 @@ function connectionSetup(){
  ${btn('SET UP MT5','nav:brokers','btn-primary')}<small>Read-only worker pairing; no MT5 passwords or order execution.</small></div>
  </div></section>`;
 }
-function dashboard(){return `${connectionSetup()}<section class="surface accent-top">
+function connectionReadiness(){
+ const t=cloud.snapshot?.connections?.telegram;
+ const m=cloud.snapshot?.connections?.mt5;
+ if(!t||!m)return '';
+ const labels={REQUEST_PERSONAL_LISTENER:'Request your Telegram listener',PROVISION_PRIVATE_TELEGRAM_WORKER:'Private worker provisioning required',RECONNECT_TELEGRAM_WORKER:'Telegram worker is offline; check host',SELECT_TELEGRAM_CHANNEL:'Enable a discovered Telegram channel',MONITORING_READ_ONLY:'Receiving signed, read-only observations',ADD_DEMO_BROKER:'Register your DEMO MT5 account',PAIR_OR_START_DEMO_WORKER:'Pair and start a signed Windows DEMO worker'};
+ const telegramState=t.worker_online?'SIGNED WORKER ONLINE':t.state==='NOT_REQUESTED'?'NOT REQUESTED':'OFFLINE / '+t.state;
+ const mt5State=m.worker_online?'SIGNED DEMO ONLINE':'OFFLINE';
+ return surface('CLOUD CONNECTION READINESS',
+ '<div class="setting-grid"><div class="control-group"><b>PERSONAL TELEGRAM · '+esc(telegramState)+'</b>'+
+ '<p class="text-note">'+esc(labels[t.next_step]||'Check your private Telegram listener')+
+ ' · Selected channels: '+esc(t.selected_channel_count)+'</p>'+
+ btn('TELEGRAM SETUP','nav:channels','btn-muted')+'</div>'+
+ '<div class="control-group"><b>MT5 DEMO · '+esc(mt5State)+'</b>'+
+ '<p class="text-note">'+esc(labels[m.next_step]||'Check your signed DEMO worker')+
+ ' · Connected workers: '+esc(m.connected_demo_workers)+'/'+esc(m.registered_brokers)+'</p>'+
+ btn('MT5 SETUP','nav:brokers','btn-muted')+'</div></div>'+
+ '<p class="text-note">Live order execution OFF. Readiness comes from authenticated, account-scoped worker heartbeats—not saved broker metadata.</p>');
+}
+function dashboard(){return `${connectionSetup()}${connectionReadiness()}<section class="surface accent-top">
  ${sectionHeading('NEON DARK / COMMAND CENTER','SIGNED MT5 DEMO DATA ONLY • READ ONLY')}
  <div class="metric-grid">${metric('BALANCE',cloudVal(currentBroker()?.balance,true))}${metric('EQUITY',cloudVal(currentBroker()?.equity,true),'mint')}${metric('FLOATING P&L',cloudVal(currentBroker()?.floating,true),'purple')}${metric('PENDING ORDERS',cloudVal(currentBroker()?.pending_orders))}${metric('OPEN TRADES',cloudVal(currentBroker()?.open_positions),'amber')}${metric('MT5 STATUS',currentBroker()?'DEMO CONNECTED':'OFFLINE','mint',currentBroker()?'':'offline')}</div>
  <div class="over-section"><div><b class="small-caps">LIVE TRADING CONTROL CENTER</b><div class="panel-title" style="font-size:21px">Trading overview</div><div class="subline">MT5 STATUS • VERIFIED SIGNED DEMO REPORTS ONLY</div><div class="text-note">${currentBroker()?`Broker ${esc(currentBroker().broker)} | Account ${esc(currentBroker().login_hint)}<br><b class="cyan">Balance ${cloudVal(currentBroker().balance,true)} · Equity ${cloudVal(currentBroker().equity,true)}</b>`:'Broker — | Account —<br><b class="cyan">Balance — · Equity —</b>'}</div></div><div class="over-actions">${btn('CHANNELS','nav:channels')}${btn('TRADE JOURNAL','nav:journal')}${btn("TODAY'S REPORT",'nav:plan','btn-primary')}</div></div>
@@ -300,10 +318,16 @@ function cloudTelegram(){
  ${cloud.telegramRequestReady?(sources.length?btn('REQUEST ACCOUNT LISTENER','cloud-telegram-listener-request','btn-muted'):'<p class="text-note">Register a source before requesting.</p>'):'<p class="text-note">Request service unavailable.</p>'}</div>
  `, 'Verified user only • Read-only messages • Zero MT5 order actions');
 }
+function readOnlyGoldPreview(p){
+ if(!p||p.status!=='PARSED_PREVIEW'||!Array.isArray(p.entries))return '';
+ const plans=p.entries.map(e=>'<div class="text-note mono">Entry '+esc(e.source_entry)+' · L1 TP '+esc(e.layer1?.tp)+' · L2 TP '+esc(e.layer2?.tp)+' · SL '+esc(e.layer1?.sl)+'</div>').join('');
+ return '<div class="notice"><b>READ-ONLY SIGNAL PREVIEW · '+esc(p.direction)+' '+esc(p.symbol)+' (NOT SENT)</b>'+plans+'<small class="muted">STOP/LIMIT route awaits a verified MT5 worker quote. No orders placed.</small></div>';
+}
 function channels(){
  const messages=Array.isArray(cloud.inbox)?cloud.inbox:[];
  const rows=messages.slice(0,15).map(m=>`<div class="activity-item"><div><b>${esc(m.kind)} · Chat ${esc(m.chat_id)}</b>
  <p class="text-note" style="white-space:pre-wrap">${esc(m.body).slice(0,3000)}</p>
+ ${readOnlyGoldPreview(m.signal_preview)}
  <small class="muted">${m.observed_at_ms?esc(slt(new Date(Number(m.observed_at_ms)))):'No timestamp'}</small></div></div>`).join('');
  return cloudPersonalTelegram()+surface('RECEIVED TELEGRAM MESSAGES · READ ONLY',rows||empty('No messages received from an enabled Telegram source.'),'Signed private listener or verified Bot webhook • Trading OFF')+cloudTelegram()+note();
 }
