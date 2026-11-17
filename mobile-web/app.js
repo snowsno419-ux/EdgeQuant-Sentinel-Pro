@@ -54,7 +54,7 @@ function riskHubCards(){
  '<span class="risk-global-state">SIGNED DEMO · READ ONLY</span></div>';
  if(!bs.length)return surface('BROKER RISK CONTROL HUB',h+
  '<div class="risk-empty"><b>No broker accounts registered yet</b><p class="text-note">Add a DEMO account in Brokers / MT5, then pair a verified Windows worker. Daily loss and target data need signed MT5 deal history.</p>'+
- btn('REGISTER DEMO BROKER','nav:brokers','btn-primary')+'</div>','No sample profits or imaginary broker connections');
+ btn('REGISTER DEMO BROKER','nav:brokers','btn-primary')+' <a class="risk-auth-open-preview" href="/design-preview.html">VIEW OPTION B DESIGN CONCEPT ↗</a></div>','No sample profits or imaginary broker connections');
  const cards=bs.map((b,i)=>{
   const draft=brokerRiskDraft(b.id);
   const calc=window.EdgeQuantRiskHub.calculate(b,draft);
@@ -438,6 +438,7 @@ function riskAuthIntro(){
  '<div class="risk-auth-sample"><div><b>Exness / Additional brokers</b><small>Independent limits &amp; warnings per account</small></div><strong>NOT CONNECTED</strong></div>'+
  '<div class="risk-auth-track"><div class="risk-auth-track-fill" style="width:0"></div></div></div>'+
  '<div class="auth-feature-list"><div><span>◈</span> Per-broker risk limits</div><div><span>▤</span> Profit and loss monitoring</div><div><span>▦</span> Responsive mobile workspace</div></div>'+
+ '<a class="risk-auth-open-preview" href="/design-preview.html">EXPLORE NEW DASHBOARD DESIGN · NO LOGIN NEEDED ↗</a>'+ 
  '<div class="risk-auth-annotation">Development UI · Cloud trading OFF · No broker passwords stored in this page.</div></section>';
 }
 function profile(){
