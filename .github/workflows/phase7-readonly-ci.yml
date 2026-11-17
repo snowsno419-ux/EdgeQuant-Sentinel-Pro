@@ -31,6 +31,7 @@ jobs:
       - name: Node syntax checks
         run: |
           node --check mobile-web/app.js
+          node --check mobile-web/risk-hub.js
           node --check mobile-web/api/dashboard.js
           node --check mobile-web/api/_lib/signal-preview.js
           node --check mobile-web/api/_lib/connection-status.js
