@@ -300,10 +300,16 @@ function cloudTelegram(){
  ${cloud.telegramRequestReady?(sources.length?btn('REQUEST ACCOUNT LISTENER','cloud-telegram-listener-request','btn-muted'):'<p class="text-note">Register a source before requesting.</p>'):'<p class="text-note">Request service unavailable.</p>'}</div>
  `, 'Verified user only • Read-only messages • Zero MT5 order actions');
 }
+function readOnlyGoldPreview(p){
+ if(!p||p.status!=='PARSED_PREVIEW'||!Array.isArray(p.entries))return '';
+ const plans=p.entries.map(e=>'<div class="text-note mono">Entry '+esc(e.source_entry)+' · L1 TP '+esc(e.layer1?.tp)+' · L2 TP '+esc(e.layer2?.tp)+' · SL '+esc(e.layer1?.sl)+'</div>').join('');
+ return '<div class="notice"><b>READ-ONLY SIGNAL PREVIEW · '+esc(p.direction)+' '+esc(p.symbol)+' (NOT SENT)</b>'+plans+'<small class="muted">STOP/LIMIT route awaits a verified MT5 worker quote. No orders placed.</small></div>';
+}
 function channels(){
  const messages=Array.isArray(cloud.inbox)?cloud.inbox:[];
  const rows=messages.slice(0,15).map(m=>`<div class="activity-item"><div><b>${esc(m.kind)} · Chat ${esc(m.chat_id)}</b>
  <p class="text-note" style="white-space:pre-wrap">${esc(m.body).slice(0,3000)}</p>
+ ${readOnlyGoldPreview(m.signal_preview)}
  <small class="muted">${m.observed_at_ms?esc(slt(new Date(Number(m.observed_at_ms)))):'No timestamp'}</small></div></div>`).join('');
  return cloudPersonalTelegram()+surface('RECEIVED TELEGRAM MESSAGES · READ ONLY',rows||empty('No messages received from an enabled Telegram source.'),'Signed private listener or verified Bot webhook • Trading OFF')+cloudTelegram()+note();
 }
