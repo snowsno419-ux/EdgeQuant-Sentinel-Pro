@@ -35,6 +35,10 @@ def mt5_account(terminal=None):
     if info is None or info.trade_mode!=mt5.ACCOUNT_TRADE_MODE_DEMO:
         mt5.shutdown()
         raise RuntimeError("ONLY DEMO MT5 accounts are accepted; real accounts are blocked")
+    terminal_info=mt5.terminal_info()
+    if terminal_info is None or not getattr(terminal_info,"connected",False):
+        mt5.shutdown()
+        raise RuntimeError("MT5 terminal is disconnected; refusing a false ONLINE observation")
     return info
 
 def request(url,payload,signature=None):
@@ -84,11 +88,15 @@ def observe(args):
             try:
                 if str(info.login)!=args.login or str(info.server)!=args.server:
                     raise RuntimeError("DEMO account/server mismatch; no data sent")
+                positions=mt5.positions_get()
+                pending=mt5.orders_get()
+                if positions is None or pending is None:
+                    raise RuntimeError("MT5 positions/orders query failed; refusing a false zero-count observation")
                 payload={"balance":format(info.balance,".2f"),"broker_id":args.broker_id,
                   "equity":format(info.equity,".2f"),"event_id":secrets.token_hex(16),
                   "floating":format(info.profit,".2f"),"login_hint":args.login,
-                  "mode":"DEMO","open_positions":len(mt5.positions_get() or ()),
-                  "pending_orders":len(mt5.orders_get() or ()),
+                  "mode":"DEMO","open_positions":len(positions),
+                  "pending_orders":len(pending),
                   "server":args.server,"terminal_connected":True,
                   "timestamp_ms":int(time.time()*1000),"worker_id":worker_id}
                 code,data=request(BASE+"/api/worker-observation",payload,signature(private,payload))
